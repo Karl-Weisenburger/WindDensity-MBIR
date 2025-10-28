@@ -1,5 +1,8 @@
-numpy>=2.2.3
+numpy
 matplotlib
 scipy
-jaxopt
+jaxlib
 jax
+mbirjax
+zernike
+setuptools

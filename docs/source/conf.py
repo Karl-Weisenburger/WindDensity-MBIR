@@ -29,9 +29,9 @@ def setup(app):
 
 # -- Project information -----------------------------------------------------
 
-project = 'aomodel'
-copyright = '2025, aomodel Development Team'
-author = 'aomodel Development Team'
+project = 'wind_tomo'
+copyright = '2025, wind_tomo Development Team'
+author = 'wind_tomo Development Team'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1'

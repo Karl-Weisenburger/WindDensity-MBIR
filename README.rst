@@ -15,7 +15,7 @@ Installing
 
     .. code-block::
 
-        git clone git@github.com:cabouman/aomodel
+        git clone git@github.com:cabouman/wind-tunnel-density-tomography
 
 2. Install the conda environment and package
 
@@ -34,24 +34,24 @@ Installing
 
         1. *Create conda environment:*
 
-            Create a new conda environment named ``aomodel`` using the following commands:
+            Create a new conda environment named ``wind_tomo`` using the following commands:
 
             .. code-block::
 
-                conda create --name aomodel python=3.11
-                conda activate aomodel
+                conda create --name wind_tomo python=3.11
+                conda activate wind_tomo
                 pip install -r requirements.txt
 
-            Anytime you want to use this package, this ``aomodel`` environment should be activated with the following:
+            Anytime you want to use this package, this ``wind_tomo`` environment should be activated with the following:
 
             .. code-block::
 
-                conda activate aomodel
+                conda activate wind_tomo
 
 
-        2. *Install aomodel package:*
+        2. *Install wind_tomo package:*
 
-            Navigate to the main directory ``aomodel/`` and run the following:
+            Navigate to the main directory ``wind-tunnel-density-tomography/`` and run the following:
 
             .. code-block::
 
@@ -77,9 +77,9 @@ following:
         cd ..
 
 
-After downloading the data files, run the demo script ``demo_ReVAR.py`` from the parent directory (the aomodel folder
+After downloading the data files, run the demo script ``demo_simulation_and_tomography.py`` from the parent directory (the aomodel folder
 containing this file) with the following command:
 
     .. code-block::
 
-        python demo/demo_ReVAR.py
+        python demo/demo_simulation_and_tomography.py

@@ -24,7 +24,7 @@ cd ..
 echo " "
 echo "Running demo file: demo_ReVAR.py"
 echo " "
-python demo/demo_ReVAR.py
+python demo/demo_simulation_and_tomography.py
 
 echo " "
 echo "Test for pull request #3 complete"

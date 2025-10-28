@@ -40,7 +40,7 @@ __pycache__/
 .idea/
 
 # compiled files
-aomodel/interface_cy_c.c
+wind_tomo/interface_cy_c.c
 aomodel/*.so
 *.o
 aomodel.egg-info/

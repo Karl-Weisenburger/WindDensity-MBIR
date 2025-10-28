@@ -1,17 +1,17 @@
 API Documentation
 =================
 
-* revar_ combines Principal Component Analysis (PCA) and Long-Range Vector Auto-Regression (LRVAR).
-* long_range_var_ applies an LRVAR model.
-* pca_ applies PCA.
+* tomography_  Functions for processing experimental data and performing tomographic reconstruction
+* simulation_ Functions for simulating of atmospheric turbulence volumes and beam propagation
+* utilities_ utility functions
 
-.. _revar: revar.html
-.. _long_range_var: long_range_var.html
-.. _pca: pca.html
+.. _tomography: tomography.html
+.. _simulation: simulation.html
+.. _utilities: utilities.html
 .. toctree::
    :titlesonly:
    :hidden:
 
-   revar
-   long_range_var
-   pca
+   tomography
+   simulation
+   utilities

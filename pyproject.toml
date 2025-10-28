@@ -3,22 +3,24 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aomodel"
+name = "wind_tomo"
 version = "0.1"
-description = "Synthetic time-series data generation"
+description = "tomographic reconstruction of wind tunnel turbulance data"
+keywords = ["tomography", "tomographic reconstruction", "computed tomography"]
 readme = "README.rst"
 license = { file = "LICENSE" }
 authors = [
-    { name = "aomodel development team", email = "buzzard@purdue.edu" }
+    { name = "wind-tunnel-density-tomography development team", email = "buzzard@purdue.edu" }
 ]
 requires-python = ">=3.11"
-dependencies = ["numpy>=2.2.3",
+dependencies = ["numpy",
                 "matplotlib",
-                "Pillow>=9.1",
+                "mbirjax",
                 "scipy",
-                "jaxopt",
+                "jaxlib",
                 "jax",
-                "scipy"]
+                "setuptools",
+                "zernike"]
 
 [project.optional-dependencies]
 cuda12 = ["jax[cuda12]"]
@@ -35,4 +37,4 @@ docs = [
 find = {}
 
 [project.urls]
-source = "https://github.com/cabouman/aomodel"
+source = "https://github.com/cabouman/wind-tunnel-density-tomography"
