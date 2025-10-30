@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from wind_density_tomo.visualization_and_analysis import nrmse_over_roi
 import matplotlib.pyplot as plt
 
-def display_raw_data_and_processed_data(raw_data,processed_data):
+def display_raw_data_and_processed_data(raw_data,processed_data,weight_matrix):
     """"""
     N = raw_data.shape[0]
     # Set values outside the roi to NaN for better visualization
@@ -11,13 +11,15 @@ def display_raw_data_and_processed_data(raw_data,processed_data):
     vmin = min(jnp.nanmin(jnp.array(raw_data)),jnp.nanmin(jnp.array(processed_data)))
     vmax = max(jnp.nanmax(jnp.array(raw_data)),jnp.nanmax(jnp.array(processed_data)))
     scale = 0.75
-    fig = plt.figure(figsize=(4 * N * scale, 8 * scale), constrained_layout=True)
+    fig = plt.figure(figsize=(6 * N * scale, 12 * scale), constrained_layout=True)
     fig.suptitle('Comparing Raw Data to Processed Data', fontsize=18)
-    subfigs = fig.subfigures(2, 1)
+    subfigs = fig.subfigures(3, 1)
     subfigs[0].suptitle(f'Raw Data', fontsize=16, fontstyle='italic')
-    subfigs[1].suptitle(f'Processed Data', fontsize=16, fontstyle='italic')
+    subfigs[1].suptitle(f'Processed Data', fontsize=16, fontstyle='italic',y=0.85)
+    subfigs[2].suptitle(f'CT Weight Matrix (i.e., FOV)', fontsize=16, fontstyle='italic',y=0.85)
     axes_raw = subfigs[0].subplots(1, N)
     axes_proc = subfigs[1].subplots(1, N)
+    axes_weight = subfigs[2].subplots(1, N)
     for i in range(N):
         axes_raw[i].imshow(raw_data[i], cmap='jet', origin='lower', vmin=vmin, vmax=vmax)  # , extent=extent)
         axes_raw[i].set_title(f'View {i+1}', fontsize=12)
@@ -31,6 +33,12 @@ def display_raw_data_and_processed_data(raw_data,processed_data):
         axes_proc[i].set_xticks([])
         axes_proc[i].set_yticks([])
         axes_proc[i].grid(False)
+
+        axes_weight[i].imshow(weight_matrix[i], cmap='jet', origin='lower')
+        axes_weight[i].set_title(f'View {i + 1}', fontsize=12)
+        axes_weight[i].set_xticks([])
+        axes_weight[i].set_yticks([])
+        axes_weight[i].grid(False)
 
 
 def display_planes_from_recon_and_ground_truth(recon_planes, gt_planes, roi_planes, title=f'Reconstruction of planes'):
