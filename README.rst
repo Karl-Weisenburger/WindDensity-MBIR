@@ -1,10 +1,9 @@
 .. docs-include-ref
 
-aomodel
-=======
+wind_density_tomo
+===============================
 
-This project includes a data-driven algorithm that generates synthetic time-series of images (of arbitrary duration)
-by estimating statistical parameters from an input time-series of images.
+A Python package for simulating wind tunnel density tomography experiments and performing tomographic reconstruction using mbirjax
 
 ..
     Include more detailed description here.
@@ -15,7 +14,7 @@ Installing
 
     .. code-block::
 
-        git clone git@github.com:cabouman/wind-tunnel-density-tomography
+        git clone git@github.com:cabouman/wind_density_tomo
 
 2. Install the conda environment and package
 
@@ -34,7 +33,7 @@ Installing
 
         1. *Create conda environment:*
 
-            Create a new conda environment named ``wind_tomo`` using the following commands:
+            Create a new conda environment named ``wind_density_tomo`` using the following commands:
 
             .. code-block::
 
@@ -42,7 +41,7 @@ Installing
                 conda activate wind_tomo
                 pip install -r requirements.txt
 
-            Anytime you want to use this package, this ``wind_tomo`` environment should be activated with the following:
+            Anytime you want to use this package, this ``wind_density_tomo`` environment should be activated with the following:
 
             .. code-block::
 
@@ -51,7 +50,7 @@ Installing
 
         2. *Install wind_tomo package:*
 
-            Navigate to the main directory ``wind-tunnel-density-tomography/`` and run the following:
+            Navigate to the main directory ``wind_density_tomo/`` and run the following:
 
             .. code-block::
 

@@ -1,11 +1,13 @@
 #%%
 import jax
 import jax.numpy as jnp
-from wind_tomo.simulation import *
-from wind_tomo.tomography import *
-from demo_utils import display_N_planes_from_recon_and_ground_truth
-from wind_tomo.utilities import generate_beam_path_ROI_mask, display_viewing_configuration_schematic
+import wind_density_tomo.simulation as sim
+import wind_density_tomo.tomography as tomo
+import wind_density_tomo.visualization_and_analysis as va
+import wind_density_tomo.utilities as utils
+import wind_density_tomo.configuration_params as config
 import matplotlib.pyplot as plt
+from demo_utils import display_planes_from_recon_and_ground_truth
 
 """
 This file is a demo script for simulating OPD_TT measurements with simulated data and performing tomographic reconstruction.
@@ -16,6 +18,10 @@ test_region_dims=(20,12.5,2) # in cms (depth axis, stream-wise axis ,vertical ax
 beam_diameter = 2  # in cms
 pixel_pitch = 0.03125  # in cms
 
+#visualization parameters
+num_planes=4
+zernike_range=(2,11)
+
 # Define sensor locations in cms (depth axis, stream-wise axis) with respect to the center of the test region
 sensor_one = jnp.array([26, -2.5])
 sensor_two = jnp.array([26, 0])
@@ -23,24 +29,22 @@ sensor_three = jnp.array([26, 2.5])
 sensor_locations = [sensor_one, sensor_two, sensor_three]
 
 # Define beam angles in radians for each sensor, defined with respect to the depth axis (i.e., 0 radians is along the depth axis)
-# sensor_one_angles = jnp.array([-6.5, -5.5, -4.5]) * jnp.pi / 180
-sensor_one_angles = jnp.array([-1, 0, 1]) * jnp.pi / 180
+sensor_one_angles = jnp.array([-6.5, -5.5, -4.5]) * jnp.pi / 180
 sensor_two_angles = jnp.array([-1, 0, 1]) * jnp.pi / 180
-sensor_three_angles = jnp.array([-1, 0, 1]) * jnp.pi / 180
+sensor_three_angles = jnp.array([4.5, 5.5, 6.5]) * jnp.pi / 180
 
 # sensor_three_angles = jnp.array([4.5, 5.5, 6.5]) * jnp.pi / 180
 beam_angles=[sensor_one_angles,sensor_two_angles,sensor_three_angles]
 
-display_viewing_configuration_schematic(sensor_locations, beam_angles, diameter=None, title=f'{len(beam_angles)} sensor viewing configuration with {beam_diameter} cm beam diameter', dims=test_region_dims,roi_thickness_and_num_regions=(2,1))
-plt.show()
 #%%
 # collect optical setup information
-optical_params=define_optical_setup(sensor_locations, beam_angles, test_region_dims, pixel_pitch, windows=True)
-beam_diameter_pixels=int(beam_diameter/pixel_pitch)
+optical_params=config.define_optical_setup(sensor_locations, beam_angles, test_region_dims, pixel_pitch,beam_fov=beam_diameter, windows=True)
+
+# visualize the viewing configuration
+va.display_viewing_configuration_schematic(optical_params,roi_thickness_and_num_regions=(optical_params.beam_diameter_cm,1))
 
 ## Simulate atmospheric phase volume
 r0=0.05  # Fried parameter in meters
-dim=optical_params['test_region_pixel_dims']  # dimensions of the phase volume in pixels
 delta=pixel_pitch/100  # pixel pitch of the phase volume in meters
 L0=0.02  # Outer scale in meters
 seed=42  # random seed for phase volume generation
@@ -54,27 +58,45 @@ cuda_devices = [d for d in devices if d.platform == 'cuda']
 if cuda_devices:
     print("CUDA-enabled GPU(s) found. Will generate new atmospheric phase volume on GPU.")
     key = jax.random.PRNGKey(42)
-    phase_volume = generate_random_atmospheric_phase_volume(r0, dim, delta, L0=L0, l0=0.0, key=key)
+    phase_volume = sim.generate_random_atmospheric_phase_volume(r0, optical_params.test_region_pixel_dims, delta, L0=L0, l0=0.0, key=key)
 else:
     print("No CUDA-enabled GPU found for JAX. Using pre-generated atmospheric phase volume.")
     phase_volume = jnp.load("data/pre_generated_phase_volume.npy")
 
 ## Simulate OPD_TT measurements
 # create mbirjax CT model and FOV mask
-ct_model, FOV = create_ct_model_and_weights(optical_params, beam_diameter)
+ct_model, FOV = sim.create_ct_model_and_weights_for_simulation(optical_params)
 print('\nCT model and FOV mask created.')
 
 # simulate tip-tilt removed OPD views
 print('\nSimulating OPD_TT measurements...')
-OPD_views=collect_projection_measurement(ct_model, FOV, phase_volume, projection_type='OPD_TT')
+OPD_views=sim.collect_projection_measurement(ct_model, FOV, phase_volume, projection_type='OPD_TT')
 print('\nSimulated OPD_TT measurements collected.')
 
 ## Perform tomographic reconstruction using mbirjax
 print('\nStarting tomographic reconstruction using mbirjax...')
 reconstruction,_=ct_model.recon(OPD_views, weights=FOV)
 print('Tomographic reconstruction completed.')
+
+
 # visualize results
-ROI=generate_beam_path_ROI_mask(dim, beam_diameter_pixels)
-print('\nDisplaying reconstructed planes compared to ground truth planes...')
-display_N_planes_from_recon_and_ground_truth(reconstruction,phase_volume,ROI,depth_axis_length=test_region_dims[0],N=4,plane_type='OPD_TT')
+ROI=va.generate_beam_path_roi_mask(optical_params.test_region_pixel_dims, optical_params.beam_diameter_pixels)
+
+print(f'\nReducing volumes into {num_planes} OPL planes...')
+recon_planes = va.divide_into_sections_of_opl(reconstruction, num_planes, test_region_dims[0])
+gt_planes = va.divide_into_sections_of_opl(phase_volume, num_planes, test_region_dims[0])
+ROI_planes = ROI[:num_planes]
+
+print('\nConverting OPL planes into $\\text{OPD}_{\\text{TT}}$...')
+recon_planes_OPD = utils.remove_tip_tilt_piston(recon_planes, ROI_planes)
+gt_planes_OPD = utils.remove_tip_tilt_piston(gt_planes, ROI_planes)
+
+display_planes_from_recon_and_ground_truth(recon_planes_OPD,gt_planes_OPD,ROI_planes,title=f'Reconstruction of {num_planes}'+' $\\text{OPD}_{\\text{TT}}$ planes')
+
+print(f'\nIsolating specific Zernike Modes of radial degree {zernike_range[0]} to {zernike_range[1]}')
+recon_planes_zern=jnp.array(va.isolate_zernike_mode_range_for_volume(recon_planes, zernike_range[0], zernike_range[1], ROI_planes))
+gt_planes_zern=jnp.array(va.isolate_zernike_mode_range_for_volume(gt_planes, zernike_range[0], zernike_range[1], ROI_planes))
+
+display_planes_from_recon_and_ground_truth(recon_planes_zern,gt_planes_zern,ROI_planes,title=f'Reconstruction of {num_planes} planes, isolating zernike radial degrees {zernike_range[0]} to {zernike_range[1]}')
+
 plt.show()

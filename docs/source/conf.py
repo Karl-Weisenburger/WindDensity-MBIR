@@ -29,9 +29,9 @@ def setup(app):
 
 # -- Project information -----------------------------------------------------
 
-project = 'wind_tomo'
-copyright = '2025, wind_tomo Development Team'
-author = 'wind_tomo Development Team'
+project = 'wind_density_tomo'
+copyright = '2025, wind_density_tomo Development Team'
+author = 'wind_density_tomo Development Team'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1'

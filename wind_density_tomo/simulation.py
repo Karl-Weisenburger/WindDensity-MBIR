@@ -1,32 +1,53 @@
 # simulation.py
 import jax.numpy as jnp
 import numpy as np
-from jax import random
 import mbirjax
-from wind_tomo.utilities import circ_block, ift3_jax,remove_tip_tilt_jax,remove_piston_jax,align_fov_with_optical_axis
 import warnings
+import wind_density_tomo.utilities as utils
+import wind_density_tomo.configuration_params as config
+from typing import Tuple
+from jax import random
 
-def create_ct_model_and_weights(optical_setup, beam_fov,return_weights_only=False):
+
+def create_ct_model_and_weights_for_simulation(optical_setup: config.OpticalSetup | None = None, return_weights_only: bool = False, **kwargs):
     """
-    Create the mbirjax CT model and weight matrix based on the optical setup.
+    Create a CT model and weight matrix for simulating tomographic measurements.
 
     Args:
-        optical_setup (dict): Optical setup parameters from `define_optical_setup`.
-        beam_fov (float, jnp.ndarray, or np.ndarray): Beam FOV. Can be:
-            - Scalar (beam diameter in cm, assumes disk-shaped FOV).
-            - 2D boolean array (shared FOV shape for all beams).
-            - 3D boolean array (unique FOV shape for each beam).
-        return_weights_only (bool): If True, only returns the weight matrix without creating the CT model.
+        optical_setup (config.OpticalSetup, optional): Instance of config.OpticalSetup class containing optical parameters.
+        return_weights_only (bool): If True, only return the weight matrix.
+        **kwargs: Parameters to define the optical setup if optical_setup is not provided. Required parameters are:
+
+            - **sensor_locations_pixels** (List[Tuple[float, float]]): List of (x, y) sensor locations in pixels.
+
+            - **beam_angles** (List[float]): List of beam angles in radians.
+
+            - **test_region_pixel_dims** (Tuple[int, int, int]): Dimensions of the test region in pixels (rows, cols, slices).
+
+            - **pixel_pitch** (float): Pixel pitch in meters.
+
+            - **windows** (bool): Whether to apply windowing to the beams.
+
+            - **beam_fov** (Union[float, jnp.ndarray]): Field of view for each beam. Can be a scalar (disk-shaped FOV),
+              a 2D boolean array (shared FOV), or a 3D boolean array (unique FOV per beam).
 
     Returns:
-        tuple: (ct_model, weight_matrix)
+        Tuple[mbirjax.TomographyModel, jnp.ndarray]: **CT model** and **weight matrix**.
     """
+    if optical_setup is None:
+        if kwargs:
+            optical_setup = config.define_optical_setup(**kwargs)  # Now returns config.OpticalSetup object
+        else:
+            raise ValueError("Provide optical_setup or parameters")
     # Extract parameters from optical_setup
-    sensor_locations = optical_setup["sensor_locations_pixels"]
-    beam_angles = optical_setup["beam_angles"]
-    test_region_pixel_dims = optical_setup["test_region_pixel_dims"]
-    pixel_pitch = optical_setup["pixel_pitch"]
-    windows = optical_setup["windows"]
+    sensor_locations_pixels = optical_setup.sensor_locations_pixels
+    beam_angles = optical_setup.beam_angles
+    test_region_pixel_dims = optical_setup.test_region_pixel_dims
+    pixel_pitch = optical_setup.pixel_pitch
+    windows = optical_setup.windows
+    beam_fov = optical_setup.beam_fov
+    if beam_fov is None:
+        raise ValueError("beam_fov must be defined in the optical_setup for simulation")
 
     num_rows, num_cols, num_slices = test_region_pixel_dims
     num_channels = max(num_rows, num_cols)
@@ -35,13 +56,13 @@ def create_ct_model_and_weights(optical_setup, beam_fov,return_weights_only=Fals
     # Initialize weight matrix
     weights = jnp.zeros((num_views, num_slices, num_channels))
 
-    for i, (theta, axis_center) in enumerate(zip(beam_angles, sensor_locations)):
+    for i, (theta, axis_center) in enumerate(zip(beam_angles, sensor_locations_pixels)):
 
         if jnp.isscalar(beam_fov):  # Case 1: Scalar (disk-shaped FOV)
             beam_pixel_diam = beam_fov / pixel_pitch
             weights = weights.at[i, :, :].set(1) # start with all ones
             weights = weights.at[i, :, :].set(
-                circ_block(
+                utils.circ_block(
                     weights[i, :, :],
                     beam_pixel_diam,
                     (0, axis_center[0] * jnp.sin(-theta) + axis_center[1]),
@@ -58,7 +79,7 @@ def create_ct_model_and_weights(optical_setup, beam_fov,return_weights_only=Fals
             else:
                 raise ValueError("Invalid beam_fov format. Must be scalar, 2D, or 3D array.")
 
-            row_offset, col_offset = align_fov_with_optical_axis(
+            row_offset, col_offset = utils.align_fov_with_optical_axis(
                 fov_valid, axis_center, theta, num_slices, num_channels
             )
             weights = weights.at[
@@ -112,10 +133,10 @@ def collect_projection_measurement(ct_model, weights,volume,projection_type='OPD
     sinogram = ct_model.forward_project(volume)
     if projection_type=='OPD_TT':
         FOV = weights == 1
-        sinogram = remove_tip_tilt_jax(sinogram, FOV=FOV)
+        sinogram = utils.remove_tip_tilt_piston(sinogram, FOV=FOV)
     elif projection_type=='OPD':
         FOV = weights == 1
-        sinogram = remove_piston_jax(sinogram, FOV=FOV)
+        sinogram = utils.remove_piston(sinogram, FOV=FOV)
     elif projection_type!='OPL':
         raise ValueError("Invalid projection_type. Choose from 'OPD_TT', 'OPD', or 'OPL'.")
 
@@ -177,7 +198,7 @@ def generate_random_atmospheric_phase_volume(r0, dim, delta, L0=np.inf, l0=0.0, 
         * jnp.sqrt(PSD_phi)
         * jnp.sqrt(del_f_x * del_f_y * del_f_z)
     )
-    phz = jnp.real(ift3_jax(cn, scale=(N * M * P)))
+    phz = jnp.real(utils.ift3_jax(cn, scale=(N * M * P)))
 
     return phz
 
