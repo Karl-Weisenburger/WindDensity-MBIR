@@ -6,9 +6,13 @@ import wind_density_tomo.visualization_and_analysis as va
 import wind_density_tomo.configuration_params as config
 import matplotlib.pyplot as plt
 from demo_utils import display_raw_data_and_processed_data
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+output_dir = os.path.join(script_dir, 'output')
+os.makedirs(output_dir, exist_ok=True)
 
 """
-This file is a demo script for experimental data processing. 
+This file is a demo script for experimental data processing. There are three steps
     1. First, we define the parameters of our optical set up
     2. Next, we simulate raw data collection by performing a forward projection of the simulated data, cropping views 
         to the aperture, and setting values outside the aperture to Nan.
@@ -61,7 +65,9 @@ else:
     phase_volume=jnp.zeros((optical_params.test_region_pixel_dims))
     top_slice=int(optical_params.test_region_pixel_dims[2]//2+optical_params.beam_diameter_pixels/2)
     bottom_slice=int(optical_params.test_region_pixel_dims[2]//2-optical_params.beam_diameter_pixels/2)
-    phase_volume= phase_volume.at[:,:,bottom_slice:top_slice].set(jnp.load("data/pre_generated_phase_volume.npy"))
+    data_dir = os.path.join(script_dir, 'data')
+    phase_volume_path = os.path.join(data_dir, 'pre_generated_phase_volume.npy')
+    phase_volume= phase_volume.at[:,:,bottom_slice:top_slice].set(jnp.load(phase_volume_path))
 
 # create mbirjax CT model and FOV mask
 ct_model, FOV = sim.create_ct_model_and_weights_for_simulation(optical_params)
@@ -70,7 +76,7 @@ ct_model, FOV = sim.create_ct_model_and_weights_for_simulation(optical_params)
 OPD_views=sim.collect_projection_measurement(ct_model, FOV, phase_volume, projection_type='OPD_TT')
 OPD_views=OPD_views.at[FOV==0].set(jnp.nan)
 
-# Make views look like raw data
+# Make views look like raw data by cropping to beam FOV
 num_rows=max(jnp.where(FOV[0]==1)[0])-min(jnp.where(FOV[0]==1)[0])
 num_cols=max(jnp.where(FOV[0]==1)[1])-min(jnp.where(FOV[0]==1)[1])
 OPD_raw=jnp.zeros((FOV.shape[0],num_rows,num_cols))
@@ -82,7 +88,7 @@ for i in range(FOV.shape[0]):
     OPD_raw=OPD_raw.at[i].set(OPD_views[i,min_row:max_row,min_col:max_col])
 
 ### Step 3: process the raw data
-print('Processing raw data')
+print('Processing raw data...')
 
 #forget information about beam FOV
 optical_params.beam_fov=None
@@ -90,6 +96,7 @@ optical_params.beam_fov=None
 #process raw data and produce ct model with weight matrix
 ct_model, sinogram, weight_matrix=tomo.generate_ct_model_sinogram_weights_from_experimental_data(optical_params,OPD_raw)
 display_raw_data_and_processed_data(OPD_raw,sinogram,weight_matrix)
+plt.savefig(os.path.join(output_dir, 'Raw_Processed_Data_Comparison.png'))
 plt.show()
 
 

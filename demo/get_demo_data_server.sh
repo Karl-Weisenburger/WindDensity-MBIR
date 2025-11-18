@@ -3,8 +3,7 @@
 GPUCLUSTER="gilbreth"
 CPUCLUSTER="brown"
 
-source1="/depot/bouman/users/utleyj/data"
-source2="/depot/bouman/users/utleyj/pre_trained_models"
+source1="/depot/bouman/users/kweisen/wind_density_tomo/data"
 
 # Note that the target directories are relative to demo
 target_dir="./"
@@ -24,6 +23,3 @@ fi
 
 echo "${red}   Copying $source1 to $target_dir ${reset}"
 $command -r "$account_name$source1" "$target_dir"
-
-echo "${red}   Copying $source2 to $target_dir ${reset}"
-$command -r "$account_name$source2" "$target_dir"

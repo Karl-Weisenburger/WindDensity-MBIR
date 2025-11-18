@@ -267,7 +267,7 @@ def isolate_zernike_mode_range_for_img(image, roi, radial_degree_min, radial_deg
 
     return output
 
-def isolate_zernike_mode_range_for_volume(volume, radial_degree_min, radial_degree_max, roi, axis):
+def isolate_zernike_mode_range_for_volume(volume, radial_degree_min, radial_degree_max, roi, axis=0):
     """
     Isolates a specific range of Zernike modes for each slice in a 3D volume
     along a specified axis.

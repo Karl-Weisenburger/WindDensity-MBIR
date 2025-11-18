@@ -4,6 +4,26 @@ import jax.numpy as jnp
 from jax import vmap
 import jax
 
+def correct_recon_scaling(recon,ct_model, sinogram, weights):
+    """
+    Correct the scaling of the reconstruction.
+    Args:
+        recon (jnp.ndarray): Reconstructed volume.
+        ct_model (mbirjax.TomographyModel): CT model used for reconstruction.
+        sinogram (jnp.ndarray): Measured sinogram data.
+        weights (jnp.ndarray): Weight matrix used in reconstruction.
+    Returns:
+        jnp.ndarray: Scaled reconstruction.
+    """
+    error_sinogram = ct_model.forward_project(recon)
+    weighted_error_sinogram = weights * error_sinogram  # Note that fm_constant will be included below
+
+    wtd_err_sino_norm = jnp.sum(weighted_error_sinogram * error_sinogram)
+
+    alpha = jnp.sum(weighted_error_sinogram * sinogram) / wtd_err_sino_norm
+    alpha = alpha.item()
+    return alpha*recon
+
 def circ_block(view, diameter, center_offset=(0, 0)):
     """
     Set everything outside a disk equal to zero using JAX.

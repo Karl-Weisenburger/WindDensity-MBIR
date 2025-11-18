@@ -2,12 +2,12 @@
 # This script runs the demos to test pull request #3
 
 echo " "
-echo "Running file test_pr3.sh: Test for pull request #3"
+echo "Running file test_pr1.sh: Test for pull request #1"
 echo " "
 
 # Installs package
 echo " "
-echo "Installing aomodel package"
+echo "Installing wind_density_tomo package"
 echo " "
 cd ../dev_scripts
 source clean_install_all.sh
@@ -22,10 +22,10 @@ source get_demo_data_server.sh
 # Runs demo file
 cd ..
 echo " "
-echo "Running demo file: demo_ReVAR.py"
+echo "Running demo file: demo_simulation_and_tomography.py"
 echo " "
 python demo/demo_simulation_and_tomography.py
 
 echo " "
-echo "Test for pull request #3 complete"
+echo "Test for pull request #1 complete"
 echo " "
