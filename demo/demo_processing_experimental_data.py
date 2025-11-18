@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
-import wind_density_tomo.simulation as sim
-import wind_density_tomo.tomography as tomo
-import wind_density_tomo.visualization_and_analysis as va
-import wind_density_tomo.configuration_params as config
+import winddensity_mbir.simulation as sim
+import winddensity_mbir.tomography as tomo
+import winddensity_mbir.visualization_and_analysis as va
+import winddensity_mbir.configuration_params as config
 import matplotlib.pyplot as plt
 from demo_utils import display_raw_data_and_processed_data
 import os

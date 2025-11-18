@@ -1,6 +1,6 @@
 .. docs-include-ref
 
-wind_density_tomo
+WindDensity-MBIR
 ===============================
 
 A Python package for simulating wind tunnel density tomography experiments and performing tomographic reconstruction using mbirjax
@@ -14,7 +14,7 @@ Installing
 
     .. code-block::
 
-        git clone git@github.com:cabouman/wind_density_tomo
+        git clone git@github.com:cabouman/winddensity_mbir
 
 2. Install the conda environment and package
 
@@ -33,24 +33,24 @@ Installing
 
         1. *Create conda environment:*
 
-            Create a new conda environment named ``wind_density_tomo`` using the following commands:
+            Create a new conda environment named ``winddensity_mbir`` using the following commands:
 
             .. code-block::
 
-                conda create --name wind_tomo python=3.11
-                conda activate wind_tomo
+                conda create --name winddensity_mbir python=3.11
+                conda activate winddensity_mbir
                 pip install -r requirements.txt
 
-            Anytime you want to use this package, this ``wind_density_tomo`` environment should be activated with the following:
+            Anytime you want to use this package, this ``winddensity_mbir`` environment should be activated with the following:
 
             .. code-block::
 
-                conda activate wind_tomo
+                conda activate winddensity_mbir
 
 
         2. *Install wind_tomo package:*
 
-            Navigate to the main directory ``wind_density_tomo/`` and run the following:
+            Navigate to the main directory ``winddensity_mbir/`` and run the following:
 
             .. code-block::
 
@@ -76,7 +76,7 @@ following:
         cd ..
 
 
-After downloading the data files, run the demo script ``demo_simulation_and_tomography.py`` from the parent directory (the aomodel folder
+After downloading the data files, run the demo script ``demo_simulation_and_tomography.py`` from the parent directory (the winddensity_mbir folder
 containing this file) with the following command:
 
     .. code-block::

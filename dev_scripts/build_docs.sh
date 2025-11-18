@@ -7,7 +7,7 @@ cd ../docs
 make clean html
 
 echo ""
-echo "*** The html documentation is at wind_density_tomo/docs/build/html/index.html ***"
+echo "*** The html documentation is at winddensity_mbir/docs/build/html/index.html ***"
 echo ""
 
 cd ../dev_scripts

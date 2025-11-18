@@ -4,12 +4,30 @@ import jax.numpy as jnp
 import jax
 import numpy as np
 import matplotlib.pyplot as plt
-import wind_density_tomo.configuration_params as config
+import winddensity_mbir.configuration_params as config
 from functools import lru_cache
 from matplotlib.patches import Rectangle, Patch
 from matplotlib.lines import Line2D
 from collections import defaultdict
 from typing import Optional, List, Tuple, Union, Dict
+
+
+def refractive_index_2_density(refractive_index_volume, gladestone_dale_constant):
+    """
+    Convert refractive index volume to density volume using Gladstone-Dale relation.
+
+    Args:
+        refractive_index_volume (jnp.ndarray): 3D array of refractive index values.
+        gladestone_dale_constant (float): Gladstone-Dale constant for the medium.
+
+    Returns:
+        jnp.ndarray: 3D array of density values.
+    """
+    if gladestone_dale_constant == 0:
+        warnings.warn("Gladstone-Dale constant is zero. Returning zero density volume.")
+        return jnp.zeros_like(refractive_index_volume)
+    density_volume = (refractive_index_volume - 1) / gladestone_dale_constant
+    return density_volume
 
 
 def _jax_nrmse_roi_flat(GT_flat, recon_flat, indices, option=0):

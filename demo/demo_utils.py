@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from wind_density_tomo.visualization_and_analysis import nrmse_over_roi
+from winddensity_mbir.visualization_and_analysis import nrmse_over_roi
 import matplotlib.pyplot as plt
 
 def display_raw_data_and_processed_data(raw_data,processed_data,weight_matrix):
@@ -77,7 +77,7 @@ def display_planes_from_recon_and_ground_truth(recon_planes, gt_planes, roi_plan
     fig.suptitle(title, fontsize=18)
     subfigs = fig.subfigures(2, 1)
     subfigs[0].suptitle(f'Ground Truth Planes', fontsize=16,fontstyle='italic')
-    subfigs[1].suptitle(f'Reconstruction Planes', fontsize=16,fontstyle='italic')
+    subfigs[1].suptitle(f'Reconstructed Planes', fontsize=16,fontstyle='italic')
     axes_gt = subfigs[0].subplots(1, N)
     axes_recon = subfigs[1].subplots(1, N)
     for i in range(N):

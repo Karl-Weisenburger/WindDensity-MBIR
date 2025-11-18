@@ -2,7 +2,7 @@
 Installation 
 ============
 
-The ``wind_density_tomo`` package currently is only available to download and install from source through GitHub.
+The ``winddensity_mbir`` package currently is only available to download and install from source through GitHub.
 
 
 Downloading and installing from source
@@ -12,8 +12,8 @@ Downloading and installing from source
 
   In order to download the python code, move to a directory of your choice and run the following two commands.
 
-    | ``git clone https://github.com/cabouman/wind_density_tomo.git``
-    | ``cd wind_density_tomo``
+    | ``git clone https://github.com/cabouman/winddensity_mbir.git``
+    | ``cd winddensity_mbir``
 
 
 2. Create a Virtual Environment:
@@ -21,8 +21,8 @@ Downloading and installing from source
   It is recommended that you install to a virtual environment.
   If you have Anaconda installed, you can run the following:
 
-    | ``conda create --name wind_density_tomo python=3.11``
-    | ``conda activate wind_density_tomo``
+    | ``conda create --name winddensity_mbir python=3.11``
+    | ``conda activate winddensity_mbir``
 
   Install the dependencies using:
 
@@ -36,11 +36,11 @@ Downloading and installing from source
 
     ``pip install -e .``
 
-  Now to use the package, this ``wind_density_tomo`` environment needs to be activated.
+  Now to use the package, this ``winddensity_mbir`` environment needs to be activated.
 
 
 3. Install:
 
-You can verify the installation by running ``pip show wind_density_tomo``, which should display a brief summary of the packages installed in the ``wind_density_tomo`` environment.
-Now you will be able to use the ``wind_density_tomo`` python commands from any directory by running the python command ``import wind_density_tomo``.
+You can verify the installation by running ``pip show winddensity_mbir``, which should display a brief summary of the packages installed in the ``winddensity_mbir`` environment.
+Now you will be able to use the ``winddensity_mbir`` python commands from any directory by running the python command ``import winddensity_mbir``.
 

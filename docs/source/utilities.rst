@@ -1,15 +1,15 @@
 ============================
-wind_density_tomo.utilities
+winddensity_mbir.utilities
 ============================
 
-Utilities
---------------------------
+Useful Miscellaneous Functions
+------------------------------
 
 ..
-    Adjust the dashes above to match the number of characters in wind_tomo
+    Adjust the dashes above to match the number of characters in winddensity_mbir.utilities
     Include functions names as a comma separated list under :members below and one per line under autosummary below.
 
-.. automodule:: wind_density_tomo.utilities
+.. automodule:: winddensity_mbir.utilities
     :members: circ_block, align_fov_with_optical_axis, ift3_jax, ft3_jax, remove_tip_tilt_piston, estimate_tip_tilt_piston, remove_piston
     :undoc-members:
     :show-inheritance:

@@ -3,7 +3,7 @@
 GPUCLUSTER="gilbreth"
 CPUCLUSTER="brown"
 
-source1="/depot/bouman/users/kweisen/wind_density_tomo/data"
+source1="/depot/bouman/users/kweisen/winddensity_mbir/data"
 
 # Note that the target directories are relative to demo
 target_dir="./"

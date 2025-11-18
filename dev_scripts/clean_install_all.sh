@@ -5,7 +5,7 @@
 # Update the cluster host names, modules, and jax installation as needed, here and in
 # get_demo_data_server.sh
 #####
-NAME="wind_density_tomo"
+NAME="winddensity_mbir"
 GILBRETH="gilbreth"
 NEGISHI="negishi"
 GAUTSCHI="gautschi"
@@ -87,6 +87,6 @@ reset=`tput sgr0`
 
 echo " "
 echo "Use"
-echo "${red}   conda activate wind_density_tomo   ${reset}"
+echo "${red}   conda activate winddensity_mbir   ${reset}"
 echo "to activate the conda environment."
 echo " "

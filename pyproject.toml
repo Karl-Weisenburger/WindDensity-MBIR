@@ -3,14 +3,14 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wind_density_tomo"
+name = "winddensity_mbir"
 version = "0.1"
 description = "tomographic reconstruction of wind tunnel turbulance data"
 keywords = ["tomography", "tomographic reconstruction", "computed tomography"]
 readme = "README.rst"
 license = { file = "LICENSE" }
 authors = [
-    { name = "wind-tunnel-density-tomography development team", email = "buzzard@purdue.edu" }
+    { name = "WindDensity-MBIR development team", email = "buzzard@purdue.edu" }
 ]
 requires-python = ">=3.11"
 dependencies = ["numpy",
@@ -37,4 +37,4 @@ docs = [
 find = {}
 
 [project.urls]
-source = "https://github.com/cabouman/wind_density_tomo"
+source = "https://github.com/cabouman/winddensity_mbir"

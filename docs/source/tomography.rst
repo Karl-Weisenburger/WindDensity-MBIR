@@ -1,15 +1,15 @@
 ==============================
-wind_density_tomo.tomography
+winddensity_mbir.tomography
 ==============================
 
-Tomography
---------------------------
+Functions for Processing Experimental Tomography Data
+--------------------------------------------------------
 
 ..
-    Adjust the dashes above to match the number of characters in wind_tomo
+    Adjust the dashes above to match the number of characters in winddensity_mbir.tomography
     Include functions names as a comma separated list under :members below and one per line under autosummary below.
 
-.. automodule:: wind_density_tomo.tomography
+.. automodule:: winddensity_mbir.tomography
     :members: generate_ct_model_sinogram_weights_from_experimental_data
     :undoc-members:
     :show-inheritance:

@@ -1,15 +1,15 @@
 =============================
-wind_density_tomo.simulation
+winddensity_mbir.simulation
 =============================
 
-Simulation
---------------------------
+Functions for Simulating Tomography Data
+-----------------------------------------
 
 ..
-    Adjust the dashes above to match the number of characters in wind_tomo
+    Adjust the dashes above to match the number of characters in winddensity_mbir.simulation
     Include functions names as a comma separated list under :members below and one per line under autosummary below.
 
-.. automodule:: wind_density_tomo.simulation
+.. automodule:: winddensity_mbir.simulation
     :members: create_ct_model_and_weights_for_simulation, collect_projection_measurement, generate_random_atmospheric_phase_volume
     :undoc-members:
     :show-inheritance:

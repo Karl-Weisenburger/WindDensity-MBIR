@@ -1,10 +1,10 @@
 #%%
 import jax
 import jax.numpy as jnp
-import wind_density_tomo.simulation as sim
-import wind_density_tomo.visualization_and_analysis as va
-import wind_density_tomo.utilities as utils
-import wind_density_tomo.configuration_params as config
+import winddensity_mbir.simulation as sim
+import winddensity_mbir.visualization_and_analysis as va
+import winddensity_mbir.utilities as utils
+import winddensity_mbir.configuration_params as config
 import matplotlib.pyplot as plt
 from demo_utils import display_planes_from_recon_and_ground_truth
 import os

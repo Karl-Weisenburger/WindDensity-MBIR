@@ -2,12 +2,14 @@
 import warnings
 import mbirjax
 import jax.numpy as jnp
-import wind_density_tomo.utilities as utils
-import wind_density_tomo.configuration_params as config
+import winddensity_mbir.utilities as utils
+import winddensity_mbir.configuration_params as config
 
 def generate_ct_model_sinogram_weights_from_experimental_data(optical_setup: config.OpticalSetup | None = None, experimental_data: jnp.ndarray | None = None, **kwargs):
     """
     Generate a CT model, sinogram, and weight matrix based on the optical setup and experimental data.
+    The sinogram is constructed by aligning the experimental data with the optical axes defined in the optical setup.
+    After running this function, a reconstruction using the GGMRF prior can be generated with the output by running "ct_model.recon(sinogram, weights=weight_matrix)"
 
     Args:
         optical_setup (config.OpticalSetup, optional): Optical setup parameters from `config.define_optical_setup`.
@@ -30,6 +32,12 @@ def generate_ct_model_sinogram_weights_from_experimental_data(optical_setup: con
 
     Returns:
         tuple: (**ct_model**, **sinogram**, **weight_matrix**)
+
+            - **ct_model** (mbirjax.TomographyModel): The generated MBIRJAX CT model.
+
+            - **sinogram** (jax.numpy.ndarray): The sinogram constructed from experimental data.
+
+            - **weight_matrix** (jax.numpy.ndarray): The weight matrix indicating each beam's FOV.
     """
     if experimental_data is None:
         raise ValueError("experimental_data is required")

@@ -3,8 +3,8 @@ import jax.numpy as jnp
 import numpy as np
 import mbirjax
 import warnings
-import wind_density_tomo.utilities as utils
-import wind_density_tomo.configuration_params as config
+import winddensity_mbir.utilities as utils
+import winddensity_mbir.configuration_params as config
 from typing import Tuple
 from jax import random
 
