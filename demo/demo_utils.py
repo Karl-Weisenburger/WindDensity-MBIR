@@ -1,3 +1,5 @@
+#Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+
 import jax
 import jax.numpy as jnp
 from winddensity_mbir.visualization_and_analysis import nrmse_over_roi

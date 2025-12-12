@@ -16,4 +16,8 @@ License
 -------
 The project is licensed under the `BSD 3-Clause <https://opensource.org/license/BSD-3-clause/>`_ License.
 
+Public Release Approval
+-----------------------
+Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+
 

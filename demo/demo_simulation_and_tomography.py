@@ -1,4 +1,5 @@
-#%%
+#Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+
 import jax
 import jax.numpy as jnp
 import winddensity_mbir.simulation as sim

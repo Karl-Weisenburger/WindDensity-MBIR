@@ -1,3 +1,5 @@
+#Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+
 import warnings
 import math
 import jax.numpy as jnp

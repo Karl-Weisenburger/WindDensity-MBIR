@@ -3,7 +3,7 @@
 WindDensity-MBIR
 ===============================
 
-A Python package for simulating wind tunnel density tomography experiments and performing tomographic reconstruction using mbirjax
+A Python package for simulating wind tunnel density tomography experiments, processing raw tomography data, and performing tomographic reconstruction using mbirjax
 
 ..
     Include more detailed description here.
@@ -82,3 +82,7 @@ containing this file) with the following command:
     .. code-block::
 
         python demo/demo_simulation_and_tomography.py
+
+Public Release Approval
+-----------------------
+Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
