@@ -12,7 +12,7 @@ Downloading and installing from source
 
   In order to download the python code, move to a directory of your choice and run the following two commands.
 
-    | ``git clone https://github.com/cabouman/winddensity_mbir.git``
+    | ``git clone https://github.com/Karl-Weisenburger/WindDensity-MBIR.git``
     | ``cd winddensity_mbir``
 
 

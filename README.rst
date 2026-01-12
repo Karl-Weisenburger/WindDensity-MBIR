@@ -3,7 +3,9 @@
 WindDensity-MBIR
 ===============================
 
-A Python package for simulating wind tunnel density tomography experiments, processing raw tomography data, and performing tomographic reconstruction using mbirjax
+A Python package for simulating wind tunnel density tomography experiments, processing raw tomography data, and performing tomographic reconstruction using MBIRJAX_.
+
+Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
 
 ..
     Include more detailed description here.
@@ -14,7 +16,7 @@ Installing
 
     .. code-block::
 
-        git clone git@github.com:cabouman/winddensity_mbir
+        git clone git@github.com:Karl-Weisenburger/WindDensity-MBIR
 
 2. Install the conda environment and package
 
@@ -86,3 +88,6 @@ containing this file) with the following command:
 Public Release Approval
 -----------------------
 Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+
+
+.. _MBIRJAX: https://mbirjax.readthedocs.io/en/latest/
