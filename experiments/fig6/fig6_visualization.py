@@ -43,10 +43,11 @@ BEAM_PIXEL_DIAM = int(round(BEAM_DIAM_CM / CM_PER_PIXEL))   # 64
 DELTA           = 0.01 * CM_PER_PIXEL
 CN2             = 1e-11
 L0              = 0.02
-SECTIONS        = 4
-ZERN_MODE_INDEX = 2    # OPD_TT (piston + tip + tilt removed)
-MAX_OVER_RELAXATION = 1.2
-MAX_ITERATIONS  = 75
+SECTIONS                  = 4
+ZERN_MODE_INDEX           = 2    # OPD_TT (piston + tip + tilt removed)
+MAX_OVER_RELAXATION       = 1.5
+MAX_ITERATIONS            = 15
+STOP_THRESHOLD_CHANGE_PCT = 0
 
 # 7v8 geometry
 ANGLE_EXTENT_DEG = 4.0   # half-extent
@@ -98,8 +99,9 @@ def main():
     # --- MBIR ---
     def run_mbir():
         recon, _ = ct_model.recon(
-            sinogram, weights=weights, init_recon=jnp.zeros(RECON_SHAPE),
-            max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=0,
+            sinogram, weights=weights,
+            max_iterations=MAX_ITERATIONS,
+            stop_threshold_change_pct=STOP_THRESHOLD_CHANGE_PCT,
         )
         return recon
 
@@ -132,12 +134,16 @@ def main():
 
     # --- Plot ---
     fig = plot_recon_figure(
-        gt_images          = gt_images,
-        recon_images_list  = [mbir_images, fbp_images],
+        gt_images              = gt_images,
+        recon_images_list      = [mbir_images, fbp_images],
         nrmse_per_section_list = [nrmse_mbir, nrmse_fbp],
-        recon_labels       = ['MBIR', 'Scale-Corrected FBP'],
-        gt_suptitle        = r'$\mathrm{OPD}_{TT}$ Ground Truth Planes',
-        fig_suptitle       = r'Fig 6: MBIR vs Scale-Corrected FBP — 7v8 Geometry',
+        recon_labels           = [
+            r'WindDensity-MBIR Reconstruction with 7v,8$^\circ$-geometry',
+            r'Scale-Corrected FBP Reconstruction with 7v,8$^\circ$-geometry',
+        ],
+        gt_suptitle            = '$OPD_{TT}$ Ground Truth Planes',
+        fig_suptitle           = 'WindDensity-MBIR vs Scale-Corrected FBP',
+        roi_beam               = roi_beam,
     )
 
     for ext in ('pdf', 'png'):

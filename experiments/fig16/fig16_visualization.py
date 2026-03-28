@@ -43,8 +43,9 @@ DELTA           = 0.01 * CM_PER_PIXEL
 CN2             = 1e-11
 L0              = 0.02
 SECTIONS        = 4
-MAX_OVER_RELAXATION = 1.2
-MAX_ITERATIONS  = 75
+MAX_OVER_RELAXATION       = 1.5
+MAX_ITERATIONS            = 15
+STOP_THRESHOLD_CHANGE_PCT = 0.2
 
 # 7v8 geometry
 ANGLE_EXTENT_DEG = 4.0
@@ -95,25 +96,30 @@ def main():
     # --- MBIR reconstructions ---
     def run_opl_recon():
         recon, _ = ct_model.recon(
-            sino_opl, weights=weights, init_recon=jnp.zeros(RECON_SHAPE),
-            max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=0,
+            sino_opl, weights=weights,
+            max_iterations=MAX_ITERATIONS,
+            stop_threshold_change_pct=STOP_THRESHOLD_CHANGE_PCT,
         )
         return recon
 
     def run_opdtt_recon():
         recon, _ = ct_model.recon(
-            sino_opdtt, weights=weights, init_recon=jnp.zeros(RECON_SHAPE),
-            max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=0,
+            sino_opdtt, weights=weights,
+            max_iterations=MAX_ITERATIONS,
+            stop_threshold_change_pct=STOP_THRESHOLD_CHANGE_PCT,
         )
         return recon
 
     recon_opl   = _load_or_run_recon(OUT_DIR / f'recon_seed{SEED}_7v8_OPL.npy',   run_opl_recon)
     recon_opdtt = _load_or_run_recon(OUT_DIR / f'recon_seed{SEED}_7v8_OPD_TT.npy', run_opdtt_recon)
 
+    m1_type = ['OPL', 'OPD', 'OPD_{TT}']
+    m2_type = ['OPL', 'OPD', r'$\text{OPD}_{\text{TT}}$']
+
     # --- Figs 16a (OPL planes) and 16b (OPD_TT planes) ---
-    for fig_id, zern_mode_index, gt_suptitle, plane_name in [
-        ('16a', 0, 'OPL Ground Truth Planes',                  'OPL'),
-        ('16b', 2, r'$\mathrm{OPD}_{TT}$ Ground Truth Planes', 'OPD_TT'),
+    for fig_id, zern_mode_index, plane_name in [
+        ('16a', 0, 'OPL'),
+        ('16b', 2, 'OPD_TT'),
     ]:
         gt_images, roi_beam = prepare_opl_images(
             vol_gt, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
@@ -124,7 +130,7 @@ def main():
         nrmse_list         = []
         recon_labels       = []
 
-        for recon_3d, meas_label in [(recon_opl, 'OPL'), (recon_opdtt, r'OPD$_{TT}$')]:
+        for recon_3d, meas_str in [(recon_opl, 'OPL'), (recon_opdtt, r'$OPD_{TT}$')]:
             r_imgs, _ = prepare_opl_images(
                 recon_3d, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
                 BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
@@ -132,15 +138,16 @@ def main():
             nrmse = compute_per_section_nrmse(gt_images, r_imgs, roi_beam)
             recon_images_list.append(r_imgs)
             nrmse_list.append(nrmse)
-            recon_labels.append(f'MBIR — {meas_label} measurement')
+            recon_labels.append(f'${m1_type[zern_mode_index]}$ with {meas_str} Measurements')
 
         fig = plot_recon_figure(
             gt_images              = gt_images,
             recon_images_list      = recon_images_list,
             nrmse_per_section_list = nrmse_list,
             recon_labels           = recon_labels,
-            gt_suptitle            = gt_suptitle,
-            fig_suptitle           = f'Fig {fig_id}: OPL vs OPD$_{{TT}}$ Measurement — {plane_name} Planes',
+            gt_suptitle            = f'${m1_type[zern_mode_index]}$ Ground Truth Planes',
+            fig_suptitle           = f'{m2_type[zern_mode_index]} Reconstruction and Model Mismatch',
+            roi_beam               = roi_beam,
         )
 
         for ext in ('pdf', 'png'):

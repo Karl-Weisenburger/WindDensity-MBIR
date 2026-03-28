@@ -137,7 +137,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 
         # Method 2: MBIR
         recon_mbir, _ = ct_model.recon(
-            sinogram_opd, weights=weights, init_recon=jnp.zeros(recon_shape),
+            sinogram_opd, weights=weights,
             max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
         )
         nrmse_arr[vol_idx, geo_idx, 2] = sections_nrmse(vol_gt, recon_mbir, roi_sections)

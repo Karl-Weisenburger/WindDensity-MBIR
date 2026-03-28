@@ -43,8 +43,9 @@ DELTA           = 0.01 * CM_PER_PIXEL
 CN2             = 1e-11
 L0              = 0.02
 SECTIONS        = 4
-MAX_OVER_RELAXATION = 1.2
-MAX_ITERATIONS  = 75
+MAX_OVER_RELAXATION       = 1.5
+MAX_ITERATIONS            = 15
+STOP_THRESHOLD_CHANGE_PCT = 0.2
 
 # Two geometries: (label, half_extent_deg, n_views)
 GEOMETRIES = [
@@ -103,8 +104,9 @@ def main():
 
         def run_mbir(ct=ct_model, sino=sinogram, w=weights):
             recon, _ = ct.recon(
-                sino, weights=w, init_recon=jnp.zeros(RECON_SHAPE),
-                max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=0,
+                sino, weights=w,
+                max_iterations=MAX_ITERATIONS,
+                stop_threshold_change_pct=STOP_THRESHOLD_CHANGE_PCT,
             )
             return recon
 
@@ -112,20 +114,26 @@ def main():
             OUT_DIR / f'recon_seed{SEED}_{geo_label}_MBIR.npy', run_mbir
         )
 
+    m1_type = ['OPL', 'OPD', 'OPD_{TT}']
+    m2_type = ['OPL', 'OPD', r'$\text{OPD}_{\text{TT}}$']
+
     # --- Fig 12a (OPL planes) and 12b (OPD_TT planes) ---
-    for fig_id, zern_mode_index, gt_suptitle, plane_name in [
-        ('12a', 0, 'OPL Ground Truth Planes',               'OPL'),
-        ('12b', 2, r'$\mathrm{OPD}_{TT}$ Ground Truth Planes', 'OPD_TT'),
+    for fig_id, zern_mode_index, plane_name in [
+        ('12a', 0, 'OPL'),
+        ('12b', 2, 'OPD_TT'),
     ]:
         gt_images, roi_beam = prepare_opl_images(
             vol_gt, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
             BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
         )
 
-        # Order: 11v16 first, then 3v2 (as specified in memory)
+        # Order: 11v16 first, then 3v2
         recon_images_list  = []
         nrmse_list         = []
-        recon_labels       = []
+        recon_labels       = [
+            r'11v,$16^\circ$-geometry with WindDensity-MBIR and $OPD_{TT}$ Measurements',
+            r'3v,$2^\circ$-geometry with WindDensity-MBIR and $OPD_{TT}$ Measurements',
+        ]
 
         for geo_label in ['11v16', '3v2']:
             r_imgs, _ = prepare_opl_images(
@@ -135,15 +143,15 @@ def main():
             nrmse = compute_per_section_nrmse(gt_images, r_imgs, roi_beam)
             recon_images_list.append(r_imgs)
             nrmse_list.append(nrmse)
-            recon_labels.append(f'MBIR — {geo_label}')
 
         fig = plot_recon_figure(
             gt_images              = gt_images,
             recon_images_list      = recon_images_list,
             nrmse_per_section_list = nrmse_list,
             recon_labels           = recon_labels,
-            gt_suptitle            = gt_suptitle,
-            fig_suptitle           = f'Fig {fig_id}: MBIR Geometry Comparison — {plane_name} Planes',
+            gt_suptitle            = f'${m1_type[zern_mode_index]}$ Ground Truth Planes',
+            fig_suptitle           = f'Effect of Geometry: 4 {m2_type[zern_mode_index]} Planes',
+            roi_beam               = roi_beam,
         )
 
         for ext in ('pdf', 'png'):

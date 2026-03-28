@@ -1,18 +1,20 @@
 """
 Figs 13, 14, 15: 7v8 geometry (7 views, 8° total extent).
 
-Fig 13: NRMSE vs resolution — OPL vs OPD_TT measurement types
-Fig 14: Zernike RMSE per radial degree — OPL vs OPD_TT (radial grouping)
-Fig 15: Zernike RMSE per radial degree — OPL vs OPD_TT (same data, OSA-style x-labels)
+Fig 13: OPD_TT NRMSE vs resolution — OPL vs OPD_TT measurement types
+Fig 14: Zernike RMSE per OSA mode (all 45) — OPL vs OPD_TT measurement types
+Fig 15: Same as Fig 14, zoomed to low-order modes (OSA 0–14)
 
-Data: data/fig14_15_table2_7v8.npz
-  nrmse:          (N_VOLS, n_ttp, n_res)
-  zernike_mse:    (N_VOLS, n_ttp, n_zmodes)
-    n_zmodes = 10  (Zernike radial degrees 0..8 individually + all combined)
-  ttp_states:     ['withTTP', 'noTTP']
-  resolutions:    [2, 3, ..., 11, 640]
-  zernike_degrees: [0, 1, ..., 8]
-  zern_resolution: int
+Data: data/fig13_14_15_17_7v8.npz
+  nrmse:         (N_NRMSE_VOLS, n_meas, n_eval, n_res)
+    meas dim 0 = OPL measurement,  1 = OPD_TT measurement
+    eval dim 0 = OPL eval,         1 = OPD_TT eval
+  zernike_mse:   (N_VOLS, n_meas, n_zmodes)  — OPD_TT eval at ZERN_RESOLUTION
+  resolutions:   [2, 3, ..., 11, 640]
+  meas_types:    ['OPL', 'OPD_TT']
+  eval_types:    ['OPL', 'OPD_TT']
+  n_osa_modes:   45
+  zern_resolution: 4
 """
 
 import sys
@@ -23,15 +25,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # ---- Paths ----------------------------------------------------------------
-DATA_FILE = Path(__file__).parent / 'data' / 'fig14_15_table2_7v8.npz'
+DATA_FILE = Path(__file__).parent / 'data' / 'fig13_14_15_17_7v8.npz'
 OUT_DIR   = Path(__file__).parent / 'data'
 
 # ---- Style ----------------------------------------------------------------
-TTP_STYLE = {
-    'withTTP': dict(color='#0072B2', linestyle='-',  marker='o',
-                    hatch=None, label='OPL measurement'),
-    'noTTP':   dict(color='#D55E00', linestyle='--', marker='s',
-                    hatch='//', label=r'OPD$_{TT}$ measurement'),
+MEAS_STYLE = {
+    'OPL':    dict(color='#0072B2', linestyle='-',  marker='o',
+                   hatch=None, label='OPL measurement'),
+    'OPD_TT': dict(color='#D55E00', linestyle='--', marker='s',
+                   hatch='//', label=r'OPD$_{TT}$ measurement'),
 }
 BAR_WIDTH  = 0.35
 LABEL_SIZE = 13
@@ -43,14 +45,15 @@ def _decode(arr):
 
 
 # ============================================================
-# Fig 13: NRMSE vs resolution
+# Fig 13: OPD_TT NRMSE vs resolution
 # ============================================================
 
 def plot_fig13(data):
-    nrmse      = data['nrmse']        # (N_VOLS, n_ttp, n_res)
-    ttp_states = _decode(data['ttp_states'])
+    nrmse       = data['nrmse']          # (N_NRMSE_VOLS, n_meas, n_eval, n_res)
+    meas_types  = _decode(data['meas_types'])
     resolutions = data['resolutions']
-    n_vols = nrmse.shape[0]
+    n_vols      = nrmse.shape[0]
+    eval_idx    = 1                      # OPD_TT eval
 
     x_labels = [str(int(r)) for r in resolutions]
     x_labels[-1] = 'Full'
@@ -58,11 +61,10 @@ def plot_fig13(data):
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    for ttp_label in ttp_states:
-        ttp_idx = ttp_states.index(ttp_label)
-        sty = TTP_STYLE.get(ttp_label, dict(color='gray', linestyle='-', marker='o', label=ttp_label))
+    for meas_idx, meas_label in enumerate(meas_types):
+        sty = MEAS_STYLE.get(meas_label, dict(color='gray', linestyle='-', marker='o', label=meas_label))
 
-        y_pct  = nrmse[:, ttp_idx, :] * 100
+        y_pct  = nrmse[:, meas_idx, eval_idx, :] * 100
         mean_y = y_pct.mean(axis=0)
         err    = 2 * y_pct.std(axis=0) / np.sqrt(n_vols)
 
@@ -75,8 +77,8 @@ def plot_fig13(data):
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels, fontsize=12, rotation=45)
     ax.set_xlabel('Number of OPL Planes', fontsize=LABEL_SIZE)
-    ax.set_ylabel('NRMSE (%)', fontsize=LABEL_SIZE)
-    ax.set_title('Fig 13: NRMSE vs Resolution — 7v8 Geometry', fontsize=TITLE_SIZE)
+    ax.set_ylabel(r'OPD$_{TT}$ NRMSE (%)', fontsize=LABEL_SIZE)
+    ax.set_title(r'Fig 13: OPD$_{TT}$ NRMSE vs Resolution — 7v8 Geometry', fontsize=TITLE_SIZE)
     ax.legend(fontsize=LABEL_SIZE)
     ax.grid(True)
     plt.tight_layout()
@@ -96,33 +98,32 @@ def _osa_x_labels(n_osa_modes):
     return [str(j) for j in range(n_osa_modes)] + ['Total']
 
 
-def _plot_zernike_comparison(ax, zernike_mse, ttp_states, n_osa_modes, title):
+def _plot_zernike_comparison(ax, zernike_mse, meas_types, n_osa_modes, title):
     """
-    Grouped bar chart: one group per OSA mode, one bar per TTP state.
+    Grouped bar chart: one group per OSA mode, one bar per measurement type.
 
-    zernike_mse: (N_VOLS, n_ttp, n_zmodes)  where n_zmodes = n_osa_modes + 1
+    zernike_mse: (N_VOLS, n_meas, n_zmodes)  where n_zmodes = n_osa_modes + 1
     """
-    n_vols, n_ttp, n_zmodes = zernike_mse.shape
+    n_vols, n_meas, n_zmodes = zernike_mse.shape
     x = np.arange(n_zmodes)
     x_labels = _osa_x_labels(n_osa_modes)
-    offsets = np.linspace(-(n_ttp - 1) * BAR_WIDTH / 2,
-                          (n_ttp - 1) * BAR_WIDTH / 2, n_ttp)
+    offsets = np.linspace(-(n_meas - 1) * BAR_WIDTH / 2,
+                          (n_meas - 1) * BAR_WIDTH / 2, n_meas)
 
-    for ti, ttp_label in enumerate(ttp_states):
-        ttp_idx = ttp_states.index(ttp_label)
-        sty = TTP_STYLE.get(ttp_label, dict(color='gray', hatch=None, label=ttp_label))
+    for meas_idx, meas_label in enumerate(meas_types):
+        sty = MEAS_STYLE.get(meas_label, dict(color='gray', hatch=None, label=meas_label))
 
-        rmse_per_vol = np.sqrt(zernike_mse[:, ttp_idx, :])   # (N_VOLS, n_zmodes)
+        rmse_per_vol = np.sqrt(zernike_mse[:, meas_idx, :])
         mean_rmse = rmse_per_vol.mean(axis=0)
         err       = 2 * rmse_per_vol.std(axis=0) / np.sqrt(n_vols)
 
         ax.bar(
-            x + offsets[ti], mean_rmse, BAR_WIDTH,
+            x + offsets[meas_idx], mean_rmse, BAR_WIDTH,
             color=sty['color'], hatch=sty.get('hatch'),
             label=sty['label'], alpha=0.85, edgecolor='black', linewidth=0.7,
         )
         ax.errorbar(
-            x + offsets[ti], mean_rmse, yerr=err,
+            x + offsets[meas_idx], mean_rmse, yerr=err,
             fmt='none', color='black', capsize=4, linewidth=1.2,
         )
 
@@ -136,8 +137,8 @@ def _plot_zernike_comparison(ax, zernike_mse, ttp_states, n_osa_modes, title):
 
 
 def plot_figs_14_15(data):
-    zernike_mse = data['zernike_mse']     # (N_VOLS, n_ttp, n_zmodes)
-    ttp_states  = _decode(data['ttp_states'])
+    zernike_mse = data['zernike_mse']    # (N_VOLS, n_meas, n_zmodes)
+    meas_types  = _decode(data['meas_types'])
     n_osa_modes = int(data['n_osa_modes'])
 
     fig, axes = plt.subplots(1, 2, figsize=(22, 7))
@@ -148,13 +149,13 @@ def plot_figs_14_15(data):
 
     # Fig 14: all 45 OSA modes
     _plot_zernike_comparison(
-        axes[0], zernike_mse, ttp_states, n_osa_modes,
+        axes[0], zernike_mse, meas_types, n_osa_modes,
         title='Fig 14: Per-OSA-Mode Zernike RMSE (all 45 modes)',
     )
-    # Fig 15: same data, zoom to low-order modes (OSA 0–14, radial degrees 0–4)
+    # Fig 15: zoom to low-order modes (OSA 0–14, radial degrees 0–4)
     zoom = min(15, n_osa_modes)
     _plot_zernike_comparison(
-        axes[1], zernike_mse[:, :, :zoom + 1], ttp_states, zoom,
+        axes[1], zernike_mse[:, :, :zoom + 1], meas_types, zoom,
         title='Fig 15: Zernike RMSE — Low-Order Modes (OSA 0–14)',
     )
 
@@ -174,7 +175,7 @@ def main():
     if not DATA_FILE.exists():
         raise FileNotFoundError(
             f'Data not found: {DATA_FILE}\n'
-            'Run data_collection.py first.'
+            'Run fig13_14_15_data_collection.py first.'
         )
 
     data = np.load(DATA_FILE, allow_pickle=True)

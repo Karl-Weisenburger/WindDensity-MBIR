@@ -135,7 +135,7 @@ def compute_per_section_nrmse(gt_beam, recon_beam, roi_beam):
 # ---------------------------------------------------------------------------
 
 def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
-                      recon_labels, gt_suptitle, fig_suptitle):
+                      recon_labels, gt_suptitle, fig_suptitle, roi_beam=None):
     """
     Standard reconstruction visualisation layout (Figs 6, 12, 16).
 
@@ -150,6 +150,8 @@ def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
         recon_labels           : list of str — subfigure suptitles for each recon row
         gt_suptitle            : str — subfigure suptitle for GT row
         fig_suptitle           : str — overall figure suptitle
+        roi_beam               : np.ndarray bool (sections, H, W) or None — pixels outside
+                                 this mask are set to NaN so they render white
 
     Returns:
         matplotlib.figure.Figure
@@ -158,13 +160,16 @@ def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
     n_recons  = len(recon_images_list)
     figsize   = (sections * 4.3, (n_recons + 1) * 4.9)
 
-    fig = plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
     fig.suptitle(fig_suptitle, fontsize=40, y=1.06)
 
     subfigs = fig.subfigures(nrows=n_recons + 1, ncols=1)
 
-    # vmin/vmax: GT and first recon share the same range
-    shared_vals = np.concatenate([gt_images.ravel(), recon_images_list[0].ravel()])
+    # vmin/vmax: GT and first recon, restricted to ROI pixels (matching original masked-array behavior)
+    if roi_beam is not None:
+        shared_vals = np.concatenate([gt_images[roi_beam], recon_images_list[0][roi_beam]])
+    else:
+        shared_vals = np.concatenate([gt_images.ravel(), recon_images_list[0].ravel()])
     vmin_shared = float(shared_vals.min())
     vmax_shared = float(shared_vals.max())
 
@@ -177,35 +182,34 @@ def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
         vmin         = vmin_shared,
         vmax         = vmax_shared,
         row_suptitle = gt_suptitle,
-        suptitle_kwargs = dict(fontsize=30, x=0.02, y=0.85, ha='left'),
+        suptitle_kwargs = dict(fontsize=30, fontstyle='italic',
+                               horizontalalignment='left', x=0.02, y=0.85),
+        roi          = roi_beam,
     )
 
     # ---------- Reconstruction rows ----------
+    # All rows share the same vmin/vmax (computed from GT + first recon only)
     for ri, (recon_imgs, nrmse_list, label) in enumerate(
         zip(recon_images_list, nrmse_per_section_list, recon_labels)
     ):
-        if ri == 0:
-            vmin_r, vmax_r = vmin_shared, vmax_shared
-        else:
-            vmin_r = float(recon_imgs.min())
-            vmax_r = float(recon_imgs.max())
-
         _fill_row(
             subfig       = subfigs[ri + 1],
             images       = recon_imgs,
             subtitles    = [f'NRMSE={v * 100:.2f}%' for v in nrmse_list],
             title_kwargs = dict(fontsize=20),
-            vmin         = vmin_r,
-            vmax         = vmax_r,
+            vmin         = vmin_shared,
+            vmax         = vmax_shared,
             row_suptitle = label,
-            suptitle_kwargs = dict(fontsize=30, x=0.02, y=1.0, ha='left'),
+            suptitle_kwargs = dict(fontsize=30, fontstyle='italic',
+                                   horizontalalignment='left', x=0.02, y=1.0),
+            roi          = roi_beam,
         )
 
     return fig
 
 
 def _fill_row(subfig, images, subtitles, title_kwargs, vmin, vmax,
-              row_suptitle, suptitle_kwargs):
+              row_suptitle, suptitle_kwargs, roi=None):
     """Helper: populate one subfigure row with imshow subplots."""
     sections = images.shape[0]
     subfig.suptitle(row_suptitle, **suptitle_kwargs)
@@ -214,18 +218,26 @@ def _fill_row(subfig, images, subtitles, title_kwargs, vmin, vmax,
         axes = [axes]
 
     for i, ax in enumerate(axes):
-        H, W = images[i].shape
+        display = images[i].astype(float).copy()
+        if roi is not None:
+            display[~roi[i]] = np.nan
+        H, W = display.shape
         im_ratio = W / H
 
         im = ax.imshow(
-            images[i].T, cmap='jet', vmin=vmin, vmax=vmax,
+            display.T, cmap='jet', vmin=vmin, vmax=vmax,
             extent=(0, 0.02, 0, 0.02),
         )
         ax.set_title(subtitles[i], **title_kwargs)
         ax.set_xticks([])
         ax.set_yticks([])
 
+        ax.set_xlabel('x-axis')
+        ax.set_ylabel('z-axis')
         cb = plt.colorbar(im, ax=ax, fraction=0.048 * im_ratio)
         cb.ax.tick_params(labelsize=15)
-        cb.ax.yaxis.offsetText.set_fontsize(15)
-        cb.ax.yaxis.offsetText.set_position((1.0, 0))
+        cb.ax.yaxis.get_offset_text().set_fontsize(15)
+        ot = cb.ax.yaxis.get_offset_text()
+        ot.set_fontsize(15)
+        ot.set_horizontalalignment('center')
+        ot.set_x(1)

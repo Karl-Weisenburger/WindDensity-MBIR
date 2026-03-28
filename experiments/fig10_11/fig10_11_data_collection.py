@@ -105,7 +105,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             )
 
             recon, _ = ct_model.recon(
-                sinogram, weights=weights, init_recon=jnp.zeros(recon_shape),
+                sinogram, weights=weights,
                 max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
             )
             recon_np = np.array(recon)

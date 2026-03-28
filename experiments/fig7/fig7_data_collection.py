@@ -34,7 +34,7 @@ N_VOLS = 100
 # 'Full angular extent' = 2 × half_extent (e.g., 10° total = ±5°)
 FULL_EXTENTS_DEG = list(range(9, 17))          # [9, 10, 11, 12, 13, 14, 15, 16]
 NUM_VIEWS_LIST   = [3, 5, 7, 9, 11]
-RESOLUTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 640]
+RESOLUTIONS = [4, 640]   # 4-plane and full resolution only
 
 # Fig7: TTP removed from sino AND recon (OPD_TT projection, compare TTP-removed GT vs recon)
 
@@ -93,7 +93,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             )
 
             recon, _ = ct_model.recon(
-                sinogram, weights=weights, init_recon=jnp.zeros(recon_shape),
+                sinogram, weights=weights,
                 max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
             )
 

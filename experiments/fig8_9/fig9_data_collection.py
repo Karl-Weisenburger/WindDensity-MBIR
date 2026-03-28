@@ -97,7 +97,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             )
 
             recon, _ = ct_model.recon(
-                sinogram, weights=weights, init_recon=jnp.zeros(recon_shape),
+                sinogram, weights=weights,
                 max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
             )
             recon_np = np.array(recon)
@@ -124,7 +124,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 
     if (vol_idx + 1) % 100 == 0:
         np.savez(
-            'data/fig8_regional_nrmse_partial.npz',
+            'data/fig9_regional_nrmse_partial.npz',
             nrmse_regional=nrmse_regional,
             n_completed=vol_idx + 1,
             geometry_names=np.array([g[0] for g in GEOMETRIES]),
@@ -141,7 +141,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 # FINAL SAVE
 # ============================================================
 np.savez(
-    'data/fig8_regional_nrmse.npz',
+    'data/fig9_regional_nrmse.npz',
     nrmse_regional=nrmse_regional,
     geometry_names=np.array([g[0] for g in GEOMETRIES]),
     ttp_states=np.array(TTP_STATES),
@@ -151,4 +151,4 @@ np.savez(
     max_over_relaxation=MAX_OVER_RELAXATION,
     max_iterations=MAX_ITERATIONS,
 )
-print('Done. Saved data/fig8_regional_nrmse.npz')
+print('Done. Saved data/fig9_regional_nrmse.npz')
