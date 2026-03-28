@@ -144,25 +144,35 @@ def collect_projection_measurement(ct_model, weights,volume,projection_type='OPD
 
     return sinogram * weights
 
-def generate_random_atmospheric_phase_volume(r0, dim, delta, L0=np.inf, l0=0.0, key=None):
+def generate_random_atmospheric_volume(cn2, dim, delta, L0=np.inf, l0=0.0, key=None):
     """
-    Generate phase volume directly with NxMxP dimensions using von Kármán PSD.
+    Generate a 3D refractive-index fluctuation volume with NxMxP dimensions using the
+    modified von Kármán refractive-index PSD.
+
+    The PSD used is the standard 3D Kolmogorov/von Kármán refractive-index spectrum
+    (in cycles/m):
+
+        Φ_n(f) = 0.033 * (2π)^{-2/3} * Cn2 * exp(-(f * l0 * 2π / 5.92)^2)
+                 / (f^2 + f0^2)^{11/6}
+
+    where the prefactor 0.033*(2π)^{-2/3} ≈ 0.00970 comes from converting the
+    standard angular-frequency PSD (Φ_n(κ) = 0.033*Cn2*(κ²+κ₀²)^{-11/6}) to
+    cycles/m via Φ_n(f) = (2π)³ * Φ_n(2πf).
 
     Args:
-        r0 (float): Fried's coherence length [m].
-        dim (tuple): Tuple containing the dimensions (N, M, P).
-        delta (float): Grid sampling interval in [m].
-        L0 (float, optional): [inf] von Karman PSD, one over outer scale frequency [m].
-        l0 (float, optional): [0] von Karman PSD, one over inner scale frequency [m].
+        cn2 (float): Refractive-index structure parameter [m^{-2/3}].
+        dim (tuple): Volume dimensions (N, M, P).
+        delta (float): Grid sampling interval [m].
+        L0 (float, optional): Outer scale [m]. Default np.inf (pure power law).
+        l0 (float, optional): Inner scale [m]. Default 0 (no inner-scale rolloff).
         key (jax.random.PRNGKey): JAX random key for reproducibility.
 
     Returns:
-        jax.numpy.ndarray (float32): NxMxP phase volume.
+        jax.numpy.ndarray (float32): NxMxP refractive-index fluctuation volume.
 
     References:
-        - J. D. Schmidt and S. of Photo-optical Instrumentation Engineers., Numerical simulation of
-          optical wave propagation with examples in MATLAB, 149–184. Press monograph ; 199,
-          SPIE, Bellingham, Wash (2010)
+        - J. D. Schmidt, Numerical Simulation of Optical Wave Propagation with Examples
+          in MATLAB, SPIE Press monograph vol. 199, pp. 149–184 (2010)
     """
     if key is None:
         key = random.PRNGKey(0)
@@ -188,8 +198,8 @@ def generate_random_atmospheric_phase_volume(r0, dim, delta, L0=np.inf, l0=0.0, 
 
     with np.errstate(divide="ignore"):
         PSD_phi = (
-            0.023
-            * r0 ** (-5 / 3)
+            0.033 * (2 * np.pi) ** (-2 / 3)
+            * cn2
             * jnp.divide(jnp.exp(-((f * oneover_fm) ** 2)), (f**2 + f0**2) ** (11 / 6))
         )
     PSD_phi = PSD_phi.at[N // 2, M // 2, P // 2].set(0)

@@ -83,8 +83,8 @@ nrmse_regional = np.zeros((N_VOLS, n_ttp, n_geos, N_SECTIONS))
 # ============================================================
 for vol_idx in trange(N_VOLS, desc='Volumes'):
     key = random.PRNGKey(vol_idx)
-    vol_gt = sim.generate_random_atmospheric_phase_volume(
-        r0=0.05, dim=recon_shape, delta=delta, L0=0.02, key=key
+    vol_gt = sim.generate_random_atmospheric_volume(
+        cn2=1e-11, dim=recon_shape, delta=delta, L0=0.02, key=key
     )
     vol_gt_np = np.array(vol_gt)
 

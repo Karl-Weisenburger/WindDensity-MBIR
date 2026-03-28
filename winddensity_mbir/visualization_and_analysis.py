@@ -336,6 +336,77 @@ def isolate_zernike_mode_range_for_volume(volume, radial_degree_min, radial_degr
 
     return output
 
+def _osa_to_nm(j):
+    """Convert OSA/ANSI single index j to radial (n) and azimuthal (m) degrees."""
+    if j == 0:
+        return 0, 0
+    n = int(np.ceil((-3 + np.sqrt(9 + 8 * j)) / 2))
+    m = 2 * j - n * (n + 2)
+    return n, m
+
+
+def compute_osa_mode_mse_for_volume(volume, roi, max_j=44):
+    """
+    Fit OSA/ANSI Zernike modes 0..max_j simultaneously to each slice of a 3-D
+    volume within a ROI and return the per-mode MSE averaged over all slices.
+
+    All modes are fit at once (single least-squares solve per slice), which
+    avoids the cross-talk that arises when fitting radial-degree groups
+    independently.
+
+    Args:
+        volume (numpy.ndarray): 3-D array of shape (S, H, W) — e.g. OPL error planes.
+        roi    (numpy.ndarray): 3-D boolean mask of the same shape.
+        max_j  (int): Maximum OSA index to include (default 44 → modes 0-44,
+                      covering radial degrees 0-8).
+
+    Returns:
+        np.ndarray: 1-D array of length (max_j + 1) containing the per-mode MSE
+                    (averaged across slices with at least one valid pixel).
+                    Units are (volume units)².
+    """
+    volume = np.asarray(volume, dtype=np.float64)
+    roi    = np.asarray(roi,    dtype=bool)
+
+    num_modes = max_j + 1
+    modes     = [_osa_to_nm(j) for j in range(num_modes)]
+    mode_mse_sum  = np.zeros(num_modes)
+    valid_slices  = 0
+
+    for i in range(volume.shape[0]):
+        mask = roi[i]
+        rows, cols = np.nonzero(mask)
+        if len(rows) == 0:
+            continue
+
+        y  = volume[i, rows, cols].astype(np.float64)
+        cy, cx = np.mean(rows), np.mean(cols)
+        dy, dx = rows - cy, cols - cx
+        dist   = np.sqrt(dx ** 2 + dy ** 2)
+        r_max  = np.max(dist)
+        if r_max == 0:
+            continue
+
+        rho   = dist / r_max
+        theta = np.arctan2(dy, dx)
+
+        A = np.zeros((len(y), num_modes), dtype=np.float64)
+        for j_idx, (n, m) in enumerate(modes):
+            A[:, j_idx] = _zernike(n, m, rho, theta)
+
+        try:
+            c, _, _, _ = np.linalg.lstsq(A, y, rcond=None)
+        except np.linalg.LinAlgError:
+            continue
+
+        for j_idx in range(num_modes):
+            mode_mse_sum[j_idx] += np.mean((A[:, j_idx] * c[j_idx]) ** 2)
+
+        valid_slices += 1
+
+    return mode_mse_sum / valid_slices if valid_slices > 0 else mode_mse_sum
+
+
 def _is_point_in_rectangle(recty, point):
     """
     Check if a point is inside a rectangle.

@@ -49,7 +49,7 @@ va.display_viewing_configuration_schematic(optical_params,roi_thickness_and_num_
 ## Step 2: Simulate Raw Data
 print('Simulating raw data...')
 # Simulate atmospheric phase volume
-r0=0.05  # Fried parameter in meters
+cn2=1e-11  # Refractive-index structure parameter [m^{-2/3}]
 delta=pixel_pitch/100  # pixel pitch of the phase volume in meters
 L0=0.02  # Outer scale in meters
 seed=42  # random seed for phase volume generation
@@ -61,7 +61,7 @@ cuda_devices = [d for d in devices if d.platform == 'cuda']
 if cuda_devices:
     print("CUDA-enabled GPU(s) found. Will generate new atmospheric phase volume on GPU.")
     key = jax.random.PRNGKey(42)
-    phase_volume = sim.generate_random_atmospheric_phase_volume(r0, optical_params.test_region_pixel_dims, delta, L0=L0, l0=0.0, key=key)
+    phase_volume = sim.generate_random_atmospheric_volume(cn2, optical_params.test_region_pixel_dims, delta, L0=L0, l0=0.0, key=key)
 else:
     print("No CUDA-enabled GPU found for JAX. Using pre-generated atmospheric phase volume.")
     phase_volume=jnp.zeros((optical_params.test_region_pixel_dims))

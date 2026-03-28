@@ -31,7 +31,7 @@ STOP_THRESHOLD_PCT = 0   # set >0 for early stopping (e.g. 0.1); 0 = run all MAX
 N_VOLS = 1000
 
 RESOLUTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 640]
-ZERNIKE_DEGREES = list(range(9))   # radial degrees 0–8
+N_OSA_MODES    = 45                # OSA/ANSI indices 0–44 (radial degrees 0–8)
 ZERN_RESOLUTION = 11               # OPL-section count at which Zernike analysis is done
 
 # Geometry: 7v8 (7 views, ±4° = 8° total)
@@ -68,7 +68,7 @@ for s in RESOLUTIONS:
 # ============================================================
 n_ttp = len(TTP_STATES)
 n_res = len(RESOLUTIONS)
-n_zmodes = len(ZERNIKE_DEGREES) + 1   # modes 0–8 individually + all modes together
+n_zmodes = N_OSA_MODES + 1   # OSA modes 0–44 individually + total MSE
 
 nrmse_arr      = np.zeros((N_VOLS, n_ttp, n_res))
 zernike_mse_arr = np.zeros((N_VOLS, n_ttp, n_zmodes))
@@ -78,8 +78,8 @@ zernike_mse_arr = np.zeros((N_VOLS, n_ttp, n_zmodes))
 # ============================================================
 for vol_idx in trange(N_VOLS, desc='Volumes'):
     key = random.PRNGKey(vol_idx)
-    vol_gt = sim.generate_random_atmospheric_phase_volume(
-        r0=0.05, dim=recon_shape, delta=delta, L0=0.02, key=key
+    vol_gt = sim.generate_random_atmospheric_volume(
+        cn2=1e-11, dim=recon_shape, delta=delta, L0=0.02, key=key
     )
 
     for ttp_idx, proj_type in enumerate(tqdm(['OPL', 'OPD_TT'], desc='TTP', leave=False)):
@@ -110,19 +110,15 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             if s == ZERN_RESOLUTION:
                 error_s = gt_s - recon_s
 
-                for mode_idx, n_deg in enumerate(ZERNIKE_DEGREES):
-                    err_n = va.isolate_zernike_mode_range_for_volume(
-                        error_s, n_deg, n_deg, roi_s, axis=0
-                    )
-                    zernike_mse_arr[vol_idx, ttp_idx, mode_idx] = float(
-                        np.mean(err_n[roi_s] ** 2)
-                    )
-
-                err_all = va.isolate_zernike_mode_range_for_volume(
-                    error_s, 0, 8, roi_s, axis=0
+                # Fit all 45 OSA modes simultaneously (no cross-talk)
+                per_mode_mse = va.compute_osa_mode_mse_for_volume(
+                    error_s, roi_s, max_j=N_OSA_MODES - 1
                 )
+                zernike_mse_arr[vol_idx, ttp_idx, :N_OSA_MODES] = per_mode_mse
+
+                # Total MSE across all pixels in ROI (final index)
                 zernike_mse_arr[vol_idx, ttp_idx, -1] = float(
-                    np.mean(err_all[roi_s] ** 2)
+                    np.mean(error_s[roi_s] ** 2)
                 )
 
     if (vol_idx + 1) % 50 == 0:
@@ -133,7 +129,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             n_completed=vol_idx + 1,
             resolutions=np.array(RESOLUTIONS),
             ttp_states=np.array(TTP_STATES),
-            zernike_degrees=np.array(ZERNIKE_DEGREES),
+            n_osa_modes=N_OSA_MODES,
             zern_resolution=ZERN_RESOLUTION,
             max_over_relaxation=MAX_OVER_RELAXATION,
             max_iterations=MAX_ITERATIONS,
@@ -149,7 +145,7 @@ np.savez(
     zernike_mse=zernike_mse_arr,
     resolutions=np.array(RESOLUTIONS),
     ttp_states=np.array(TTP_STATES),
-    zernike_degrees=np.array(ZERNIKE_DEGREES),
+    n_osa_modes=N_OSA_MODES,
     zern_resolution=ZERN_RESOLUTION,
     max_over_relaxation=MAX_OVER_RELAXATION,
     max_iterations=MAX_ITERATIONS,

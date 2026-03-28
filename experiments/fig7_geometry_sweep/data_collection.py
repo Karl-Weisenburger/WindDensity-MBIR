@@ -80,8 +80,8 @@ nrmse_arr = np.zeros((N_VOLS, n_ext, n_view, n_res))
 # ============================================================
 for vol_idx in trange(N_VOLS, desc='Volumes'):
     key = random.PRNGKey(vol_idx)
-    vol_gt = sim.generate_random_atmospheric_phase_volume(
-        r0=0.05, dim=recon_shape, delta=delta, L0=0.02, key=key
+    vol_gt = sim.generate_random_atmospheric_volume(
+        cn2=1e-11, dim=recon_shape, delta=delta, L0=0.02, key=key
     )
 
     for ext_idx, full_ext in enumerate(tqdm(FULL_EXTENTS_DEG, desc='Extents', leave=False)):
