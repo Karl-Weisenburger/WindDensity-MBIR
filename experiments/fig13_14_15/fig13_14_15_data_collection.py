@@ -25,9 +25,9 @@ test_region_dims = (num_rows * cm_per_pixel, num_cols * cm_per_pixel, num_slices
 beam_diam_cm = 2.0
 beam_pixel_diam = int(round(beam_diam_cm / cm_per_pixel))  # 64
 delta = 0.01 * cm_per_pixel
-MAX_OVER_RELAXATION = 1.2
-MAX_ITERATIONS = 75
-STOP_THRESHOLD_PCT = 0   # set >0 for early stopping (e.g. 0.1); 0 = run all MAX_ITERATIONS
+MAX_OVER_RELAXATION = 1.25
+MAX_ITERATIONS = 20
+STOP_THRESHOLD_PCT = 1
 
 N_VOLS = 1000        # total reconstructions (used for figs 14/15 Zernike)
 N_NRMSE_VOLS = 100  # first N vols also get full resolution NRMSE (used for figs 13/17)
@@ -101,6 +101,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             ct_model, weights, vol_gt, projection_type=proj_type
         )
 
+        ct_model.max_over_relaxation = MAX_OVER_RELAXATION
         recon, _ = ct_model.recon(
             sinogram, weights=weights,
             max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,

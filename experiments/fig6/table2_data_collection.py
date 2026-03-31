@@ -39,9 +39,9 @@ beam_pixel_diam = int(round(beam_diam_cm / cm_per_pixel))  # 64
 delta = 0.01 * cm_per_pixel
 total_length_m = num_rows * cm_per_pixel / 100.0  # 0.20 m
 
-MAX_OVER_RELAXATION = 1.2   # UPDATE after alpha tuning is complete
-MAX_ITERATIONS = 75
-STOP_THRESHOLD_PCT = 0
+MAX_OVER_RELAXATION = 1.25
+MAX_ITERATIONS = 20
+STOP_THRESHOLD_PCT = 1
 N_VOLS = 100
 
 # OPD_TT planes to evaluate
@@ -136,6 +136,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
         nrmse_arr[vol_idx, geo_idx, 1] = sections_nrmse(vol_gt, recon_fbp_scaled, roi_sections)
 
         # Method 2: MBIR
+        ct_model.max_over_relaxation = MAX_OVER_RELAXATION
         recon_mbir, _ = ct_model.recon(
             sinogram_opd, weights=weights,
             max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
