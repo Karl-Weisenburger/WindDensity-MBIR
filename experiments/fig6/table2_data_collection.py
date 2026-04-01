@@ -27,6 +27,9 @@ import winddensity_mbir.simulation as sim
 import winddensity_mbir.visualization_and_analysis as va
 import winddensity_mbir.utilities as utils
 
+DATA_DIR = Path(__file__).parent / 'data'
+DATA_DIR.mkdir(exist_ok=True)
+
 # ============================================================
 # PARAMETERS
 # ============================================================
@@ -146,7 +149,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
     # Incremental save every 10 volumes
     if (vol_idx + 1) % 10 == 0:
         np.savez(
-            'data/table2_fbp_comparison_partial.npz',
+            DATA_DIR / 'table2_fbp_comparison_partial.npz',
             nrmse=nrmse_arr,
             n_completed=vol_idx + 1,
             geometry_names=np.array([g[0] for g in GEOMETRIES]),
@@ -160,7 +163,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 # FINAL SAVE
 # ============================================================
 np.savez(
-    'data/table2_fbp_comparison.npz',
+    DATA_DIR / 'table2_fbp_comparison.npz',
     nrmse=nrmse_arr,
     geometry_names=np.array([g[0] for g in GEOMETRIES]),
     method_names=np.array(METHOD_NAMES),

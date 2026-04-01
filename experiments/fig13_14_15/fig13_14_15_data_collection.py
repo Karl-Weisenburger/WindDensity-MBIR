@@ -15,6 +15,9 @@ import winddensity_mbir.simulation as sim
 import winddensity_mbir.visualization_and_analysis as va
 import winddensity_mbir.utilities as utils
 
+DATA_DIR = Path(__file__).parent / 'data'
+DATA_DIR.mkdir(exist_ok=True)
+
 # ============================================================
 # PARAMETERS
 # ============================================================
@@ -143,7 +146,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 
     if (vol_idx + 1) % 50 == 0:
         np.savez(
-            'data/fig13_14_15_17_7v8_partial.npz',
+            DATA_DIR / 'fig13_14_15_17_7v8_partial.npz',
             nrmse=nrmse_arr,
             zernike_mse=zernike_mse_arr,
             n_completed=vol_idx + 1,
@@ -162,7 +165,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 # FINAL SAVE
 # ============================================================
 np.savez(
-    'data/fig13_14_15_17_7v8.npz',
+    DATA_DIR / 'fig13_14_15_17_7v8.npz',
     nrmse=nrmse_arr,
     zernike_mse=zernike_mse_arr,
     resolutions=np.array(RESOLUTIONS),

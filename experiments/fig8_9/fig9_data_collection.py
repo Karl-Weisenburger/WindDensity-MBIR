@@ -15,6 +15,9 @@ import winddensity_mbir.simulation as sim
 import winddensity_mbir.visualization_and_analysis as va
 import winddensity_mbir.utilities as utils
 
+DATA_DIR = Path(__file__).parent / 'data'
+DATA_DIR.mkdir(exist_ok=True)
+
 # ============================================================
 # PARAMETERS
 # ============================================================
@@ -125,7 +128,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 
     if (vol_idx + 1) % 100 == 0:
         np.savez(
-            'data/fig9_regional_nrmse_partial.npz',
+            DATA_DIR / 'fig9_regional_nrmse_partial.npz',
             nrmse_regional=nrmse_regional,
             n_completed=vol_idx + 1,
             geometry_names=np.array([g[0] for g in GEOMETRIES]),
@@ -142,7 +145,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 # FINAL SAVE
 # ============================================================
 np.savez(
-    'data/fig9_regional_nrmse.npz',
+    DATA_DIR / 'fig9_regional_nrmse.npz',
     nrmse_regional=nrmse_regional,
     geometry_names=np.array([g[0] for g in GEOMETRIES]),
     ttp_states=np.array(TTP_STATES),

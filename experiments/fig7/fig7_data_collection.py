@@ -16,6 +16,9 @@ import winddensity_mbir.simulation as sim
 import winddensity_mbir.visualization_and_analysis as va
 import winddensity_mbir.utilities as utils
 
+DATA_DIR = Path(__file__).parent / 'data'
+DATA_DIR.mkdir(exist_ok=True)
+
 # ============================================================
 # PARAMETERS
 # ============================================================
@@ -139,7 +142,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 
     if (vol_idx + 1) % 10 == 0:
         np.savez(
-            'data/fig7_geometry_sweep_partial.npz',
+            DATA_DIR / 'fig7_geometry_sweep_partial.npz',
             nrmse=nrmse_arr,
             perf_recon_time=perf_recon_time,
             perf_num_iterations=perf_num_iterations,
@@ -158,7 +161,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 # FINAL SAVE
 # ============================================================
 np.savez(
-    'data/fig7_geometry_sweep.npz',
+    DATA_DIR / 'fig7_geometry_sweep.npz',
     nrmse=nrmse_arr,
     perf_recon_time=perf_recon_time,
     perf_num_iterations=perf_num_iterations,
