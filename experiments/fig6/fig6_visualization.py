@@ -26,6 +26,7 @@ from experiments.recon_visualization_prep import (
     load_or_generate_volume,
     prepare_opl_images,
     compute_per_section_nrmse,
+    compute_overall_nrmse,
     plot_recon_figure,
 )
 
@@ -45,9 +46,9 @@ CN2             = 1e-11
 L0              = 0.02
 SECTIONS                  = 4
 ZERN_MODE_INDEX           = 2    # OPD_TT (piston + tip + tilt removed)
-MAX_OVER_RELAXATION       = 1.5
-MAX_ITERATIONS            = 15
-STOP_THRESHOLD_CHANGE_PCT = 0
+MAX_OVER_RELAXATION       = 1.25
+MAX_ITERATIONS            = 20
+STOP_THRESHOLD_CHANGE_PCT = 1
 
 # 7v8 geometry
 ANGLE_EXTENT_DEG = 4.0   # half-extent
@@ -131,6 +132,28 @@ def main():
     # --- Per-section NRMSE ---
     nrmse_mbir = compute_per_section_nrmse(gt_images, mbir_images, roi_beam)
     nrmse_fbp  = compute_per_section_nrmse(gt_images, fbp_images,  roi_beam)
+
+    # --- Full-resolution NRMSE ---
+    gt_full,   roi_full = prepare_opl_images(
+        vol_gt,     ZERN_MODE_INDEX, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+    mbir_full, _        = prepare_opl_images(
+        recon_mbir, ZERN_MODE_INDEX, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+    fbp_full,  _        = prepare_opl_images(
+        recon_fbp,  ZERN_MODE_INDEX, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+
+    nrmse_mbir_full     = compute_overall_nrmse(gt_full,   mbir_full, roi_full)
+    nrmse_fbp_full      = compute_overall_nrmse(gt_full,   fbp_full,  roi_full)
+    nrmse_mbir_sections = compute_overall_nrmse(gt_images, mbir_images, roi_beam)
+    nrmse_fbp_sections  = compute_overall_nrmse(gt_images, fbp_images,  roi_beam)
+
+    w = 30
+    print(f'\n--- Fig 6 NRMSE Summary ---')
+    print(f'{"":>{w}}  Full-res NRMSE  {SECTIONS}-section NRMSE')
+    print(f'{"MBIR (7v8):":<{w}}  {nrmse_mbir_full:.4f}          {nrmse_mbir_sections:.4f}')
+    print(f'{"Scale-Corrected FBP (7v8):":<{w}}  {nrmse_fbp_full:.4f}          {nrmse_fbp_sections:.4f}')
 
     # --- Plot ---
     fig = plot_recon_figure(

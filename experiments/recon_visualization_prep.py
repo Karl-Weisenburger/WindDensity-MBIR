@@ -130,6 +130,25 @@ def compute_per_section_nrmse(gt_beam, recon_beam, roi_beam):
     return nrmse_list
 
 
+def compute_overall_nrmse(gt_beam, recon_beam, roi_beam):
+    """
+    Compute a single NRMSE value across all sections within the ROI.
+
+    Args:
+        gt_beam, recon_beam : np.ndarray (sections, beam_pixel_diam, num_slices)
+        roi_beam            : np.ndarray bool, same shape
+
+    Returns:
+        float — NRMSE over all sections combined (option=2: interpercentile range normalisation)
+    """
+    return float(va.nrmse_over_roi(
+        jnp.array(gt_beam),
+        jnp.array(recon_beam),
+        jnp.array(roi_beam),
+        option=2,
+    ))
+
+
 # ---------------------------------------------------------------------------
 # Visualisation
 # ---------------------------------------------------------------------------
