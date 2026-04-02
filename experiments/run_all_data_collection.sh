@@ -53,16 +53,16 @@ run_script "fig7/fig7_data_collection.py" "fig7"
 run_script "fig8_9/fig9_data_collection.py" "fig9"
 
 # ------------------------------------------------------------------
-# Fig 10/11/17: Zernike + resolution NRMSE for 3v2 and 11v16
-#   (1000 vols Zernike, 100 vols NRMSE sweep)
+# Fig 10/11: Zernike error analysis for 3v2 and 11v16 (OPD_TT only)
+#   (1000 vols)
 # ------------------------------------------------------------------
-run_script "fig10_11_17/fig10_11_17_data_collection.py" "fig10_11_17"
+run_script "fig10_11/fig10_11_data_collection.py" "fig10_11"
 
 # ------------------------------------------------------------------
 # Fig 13/14/15/17: Zernike + resolution NRMSE for 7v8 geometry
 #   (1000 vols Zernike, 100 vols NRMSE sweep)
 # ------------------------------------------------------------------
-run_script "fig13_14_15/fig13_14_15_data_collection.py" "fig13_14_15"
+run_script "fig13_14_15_17/fig13_14_15_17_data_collection.py" "fig13_14_15_17"
 
 echo ""
 echo "============================================================"

@@ -132,10 +132,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
                 gt_s    = np.array(va.divide_into_sections_of_opl(vol_gt, s, 0.2))
                 recon_s = np.array(va.divide_into_sections_of_opl(recon,  s, 0.2))
 
-                # Remove TTP for OPD_TT comparison
-                gt_s    = np.array(utils.remove_tip_tilt_piston(jnp.array(gt_s),    FOV=roi_s_jnp))
-                recon_s = np.array(utils.remove_tip_tilt_piston(jnp.array(recon_s), FOV=roi_s_jnp))
-
+                # OPL evaluation: compare raw sections directly, no TTP removal
                 nrmse_arr[vol_idx, ext_idx, view_idx, res_idx] = float(
                     va.nrmse_over_roi(jnp.array(gt_s), jnp.array(recon_s), roi_s_jnp, option=2)
                 )

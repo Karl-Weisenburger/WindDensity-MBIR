@@ -102,10 +102,10 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
         )
 
-        gt_cmp    = np.array(utils.remove_tip_tilt_piston(vol_gt, FOV=roi_full_jnp))
-        recon_cmp = np.array(utils.remove_tip_tilt_piston(recon,  FOV=roi_full_jnp))
+        gt_cmp    = vol_gt_np
+        recon_cmp = np.array(recon)
 
-        # Per-section NRMSE along the row axis
+        # Per-section NRMSE along the row axis — OPL evaluation, no TTP removal
         for sec_idx, (r_start, r_end) in enumerate(section_bounds):
             gt_sec    = gt_cmp[r_start:r_end]
             recon_sec = recon_cmp[r_start:r_end]

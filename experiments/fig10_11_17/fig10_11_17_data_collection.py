@@ -38,7 +38,7 @@ N_NRMSE_VOLS = 100    # first N vols also get resolution NRMSE sweep (fig 17)
 # Resolution sweep for fig 17
 RESOLUTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 640]
 # Fixed resolution for Zernike analysis (figs 10, 11)
-ZERN_RESOLUTION = 11
+ZERN_RESOLUTION = 4
 N_OSA_MODES = 45  # OSA/ANSI indices 0–44 (radial degrees 0–8)
 
 # Geometries: (label, half_extent_deg, n_views)
