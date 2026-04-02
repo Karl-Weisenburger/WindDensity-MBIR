@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 # ---- Paths ----------------------------------------------------------------
 DATA_FILE = Path(__file__).parent / 'data' / 'fig7_geometry_sweep.npz'
@@ -29,38 +30,59 @@ HIGHLIGHT_COLOR = 'red'
 HIGHLIGHT_SEP_DEG = 2.0   # mark geometries with exactly this view separation
 
 
-def _plot_panel(ax, nrmse, full_extents_deg, num_views_list, res_idx, title):
+def _plot_panel(ax, nrmse, full_extents_deg, num_views_list, res_idx, title, panel_label):
     """Draw a single NRMSE-vs-angle panel."""
     n_vols = nrmse.shape[0]
 
+    highlight_x, highlight_y = [], []
+
     for vi, n_views in enumerate(num_views_list):
-        y_pct = nrmse[:, :, vi, res_idx] * 100          # (N_VOLS, n_ext)
-        mean_y = y_pct.mean(axis=0)
-        err    = 2 * y_pct.std(axis=0) / np.sqrt(n_vols)
+        y = nrmse[:, :, vi, res_idx]                     # (N_VOLS, n_ext), raw NRMSE
+        mean_y = y.mean(axis=0)
+        err    = 2 * y.std(axis=0, ddof=1) / np.sqrt(n_vols)
 
         ax.errorbar(
             full_extents_deg, mean_y, yerr=err,
-            label=f'{n_views} views',
+            label=f'{n_views} total views',
             color=COLORS[vi % len(COLORS)],
             marker=MARKERS[vi % len(MARKERS)],
-            capsize=4, linewidth=1.5, markersize=6,
+            capsize=5, linewidth=1.5, markersize=6,
         )
 
-        # Highlight 2°-separation points with red open circles
+        # Collect 2°-separation highlight points
         if n_views > 1:
             for ei, ext in enumerate(full_extents_deg):
                 if abs(ext / (n_views - 1) - HIGHLIGHT_SEP_DEG) < 1e-9:
-                    ax.plot(
-                        ext, mean_y[ei], 'o',
-                        color=HIGHLIGHT_COLOR, markersize=14,
-                        fillstyle='none', markeredgewidth=2, zorder=5,
-                    )
+                    highlight_x.append(ext)
+                    highlight_y.append(mean_y[ei])
 
-    ax.set_xlabel('Total Angular Extent (degrees)', fontsize=14)
-    ax.set_ylabel('NRMSE (%)', fontsize=14)
-    ax.set_title(title, fontsize=16)
-    ax.legend(fontsize=12)
+    # Draw highlight circles
+    if highlight_x:
+        ax.scatter(
+            highlight_x, highlight_y,
+            marker='o', facecolor='none', edgecolor=HIGHLIGHT_COLOR,
+            linewidths=2, zorder=10, s=300,
+        )
+
+    # Legend: view lines first, highlight entry last
+    handles, labels = ax.get_legend_handles_labels()
+    highlight_handle = Line2D(
+        [0], [0], marker='o', color='w',
+        markerfacecolor='none', markeredgecolor=HIGHLIGHT_COLOR,
+        markeredgewidth=2, markersize=12,
+        label=f'Geometries w/ ${HIGHLIGHT_SEP_DEG:.0f}^\\circ$ between adjacent views',
+    )
+    handles.append(highlight_handle)
+    labels.append(highlight_handle.get_label())
+    ax.legend(handles=handles, labels=labels, fontsize=12)
+
+    ax.set_xlabel('total angular extent', fontsize=16)
+    ax.set_ylabel('NRMSE', fontsize=16)
+    ax.set_title(title, fontsize=18)
     ax.grid(True)
+    ax.set_axisbelow(True)
+    ax.text(0.5, -0.12, panel_label, transform=ax.transAxes,
+            ha='center', va='top', fontsize=20)
 
 
 def main():
@@ -82,22 +104,19 @@ def main():
         raise ValueError('Resolution 4 not found in saved resolutions array.')
     res_4_idx = int(res_4_candidates[0])
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    fig.suptitle(
-        r'NRMSE vs Total Angular Extent (OPD$_{TT}$ condition)',
-        fontsize=18,
-    )
+    addendum = '\n *using $\\text{OPD}_{\\text{TT}}$ measurements*'
+    title_full = 'Average NRMSE for Full Resolution Reconstruction' + addendum
+    title_4    = f'Average NRMSE for Reconstructing {int(resolutions[res_4_idx])} $\\text{{OPD}}_{{\\text{{TT}}}}$ Planes' + addendum
 
-    _plot_panel(
-        axes[0], nrmse, full_extents_deg, num_views_list, res_full_idx,
-        title=f'Fig 7a: Full-Resolution NRMSE ({int(resolutions[res_full_idx])} planes)',
-    )
-    _plot_panel(
-        axes[1], nrmse, full_extents_deg, num_views_list, res_4_idx,
-        title=f'Fig 7b: {int(resolutions[res_4_idx])}-Plane NRMSE',
-    )
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    fig.subplots_adjust(bottom=0.15)
 
-    plt.tight_layout()
+    _plot_panel(axes[0], nrmse, full_extents_deg, num_views_list, res_full_idx,
+                title=title_full, panel_label='(a)')
+    _plot_panel(axes[1], nrmse, full_extents_deg, num_views_list, res_4_idx,
+                title=title_4, panel_label='(b)')
+
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
 
     for ext in ('pdf', 'png'):
         out = OUT_DIR / f'fig7_nrmse_vs_angle.{ext}'

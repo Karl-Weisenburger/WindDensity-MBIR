@@ -25,6 +25,7 @@ from experiments.recon_visualization_prep import (
     load_or_generate_volume,
     prepare_opl_images,
     compute_per_section_nrmse,
+    compute_overall_nrmse,
     plot_recon_figure,
 )
 
@@ -143,6 +144,21 @@ def main():
             nrmse = compute_per_section_nrmse(gt_images, r_imgs, roi_beam)
             recon_images_list.append(r_imgs)
             nrmse_list.append(nrmse)
+
+        # --- Full-resolution NRMSE printout ---
+        gt_full, roi_full = prepare_opl_images(
+            vol_gt, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+        )
+        w = 12
+        print(f'\n--- Fig {fig_id} NRMSE Summary ({plane_name} planes) ---')
+        print(f'{"Geometry":<{w}}  Full-res NRMSE  {SECTIONS}-section NRMSE')
+        for geo_label, r_imgs, nrmse_sections_list in zip(['11v16', '3v2'], recon_images_list, nrmse_list):
+            recon_full, _ = prepare_opl_images(
+                recons[geo_label], zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+            )
+            nrmse_full     = compute_overall_nrmse(gt_full,   recon_full, roi_full)
+            nrmse_sections = compute_overall_nrmse(gt_images, r_imgs,     roi_beam)
+            print(f'{geo_label:<{w}}  {nrmse_full:.4f}          {nrmse_sections:.4f}')
 
         fig = plot_recon_figure(
             gt_images              = gt_images,
