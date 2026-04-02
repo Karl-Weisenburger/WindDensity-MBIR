@@ -34,14 +34,13 @@ STOP_THRESHOLD_PCT = 1
 N_VOLS = 3000
 
 ROW_PAD     = 10          # skip this many rows at each end
-N_SECTIONS  = 8           # divide valid rows into this many sections
+N_SECTIONS  = 5           # divide valid rows into this many sections
 
 # Corner-case geometries: (label, half_extent_deg, n_views)
 GEOMETRIES = [
     ('3v2',  1.0, 3),    # 3 views, ±1° — narrow
     ('3v16', 8.0, 3),    # 3 views, ±8° — wide
 ]
-TTP_STATES = ['withTTP', 'noTTP']   # OPL, OPD_TT
 
 
 # ============================================================
@@ -76,10 +75,9 @@ section_bounds  = [(rows[0], rows[-1] + 1) for rows in section_indices]  # (star
 # ============================================================
 # STORAGE
 # ============================================================
-n_geos     = len(GEOMETRIES)
-n_ttp      = len(TTP_STATES)
+n_geos = len(GEOMETRIES)
 
-nrmse_regional = np.zeros((N_VOLS, n_ttp, n_geos, N_SECTIONS))
+nrmse_regional = np.zeros((N_VOLS, n_geos, N_SECTIONS))
 
 # ============================================================
 # MAIN LOOP
@@ -94,37 +92,30 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
     for geo_idx, (geo_label, half_ext, n_views) in enumerate(tqdm(GEOMETRIES, desc='Geometries', leave=False)):
         ct_model, weights = geo_models[geo_label]
 
-        for ttp_idx, proj_type in enumerate(['OPL', 'OPD_TT']):
-            sinogram = sim.collect_projection_measurement(
-                ct_model, weights, vol_gt, projection_type=proj_type
-            )
+        sinogram = sim.collect_projection_measurement(
+            ct_model, weights, vol_gt, projection_type='OPD_TT'
+        )
 
-            ct_model.max_over_relaxation = MAX_OVER_RELAXATION
-            recon, _ = ct_model.recon(
-                sinogram, weights=weights,
-                max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
-            )
-            recon_np = np.array(recon)
+        ct_model.max_over_relaxation = MAX_OVER_RELAXATION
+        recon, _ = ct_model.recon(
+            sinogram, weights=weights,
+            max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
+        )
 
-            # For noTTP: remove TTP from full volumes before sectioning
-            if proj_type == 'OPD_TT':
-                gt_cmp = np.array(utils.remove_tip_tilt_piston(vol_gt, FOV=roi_full_jnp))
-                recon_cmp = np.array(utils.remove_tip_tilt_piston(recon, FOV=roi_full_jnp))
-            else:
-                gt_cmp = vol_gt_np
-                recon_cmp = recon_np
+        gt_cmp    = np.array(utils.remove_tip_tilt_piston(vol_gt, FOV=roi_full_jnp))
+        recon_cmp = np.array(utils.remove_tip_tilt_piston(recon,  FOV=roi_full_jnp))
 
-            # Per-section NRMSE along the row axis
-            for sec_idx, (r_start, r_end) in enumerate(section_bounds):
-                gt_sec    = gt_cmp[r_start:r_end]
-                recon_sec = recon_cmp[r_start:r_end]
-                roi_sec   = roi_full[r_start:r_end]
+        # Per-section NRMSE along the row axis
+        for sec_idx, (r_start, r_end) in enumerate(section_bounds):
+            gt_sec    = gt_cmp[r_start:r_end]
+            recon_sec = recon_cmp[r_start:r_end]
+            roi_sec   = roi_full[r_start:r_end]
 
-                nrmse_regional[vol_idx, ttp_idx, geo_idx, sec_idx] = float(
-                    va.nrmse_over_roi(
-                        jnp.array(gt_sec), jnp.array(recon_sec), jnp.array(roi_sec), option=2
-                    )
+            nrmse_regional[vol_idx, geo_idx, sec_idx] = float(
+                va.nrmse_over_roi(
+                    jnp.array(gt_sec), jnp.array(recon_sec), jnp.array(roi_sec), option=2
                 )
+            )
 
     if (vol_idx + 1) % 100 == 0:
         np.savez(
@@ -132,7 +123,6 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             nrmse_regional=nrmse_regional,
             n_completed=vol_idx + 1,
             geometry_names=np.array([g[0] for g in GEOMETRIES]),
-            ttp_states=np.array(TTP_STATES),
             section_bounds=np.array(section_bounds),
             row_pad=ROW_PAD,
             n_sections=N_SECTIONS,
@@ -148,7 +138,6 @@ np.savez(
     DATA_DIR / 'fig9_regional_nrmse.npz',
     nrmse_regional=nrmse_regional,
     geometry_names=np.array([g[0] for g in GEOMETRIES]),
-    ttp_states=np.array(TTP_STATES),
     section_bounds=np.array(section_bounds),
     row_pad=ROW_PAD,
     n_sections=N_SECTIONS,
