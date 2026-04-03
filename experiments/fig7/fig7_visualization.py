@@ -106,7 +106,7 @@ def main():
 
     addendum = '\n *using $\\text{OPD}_{\\text{TT}}$ measurements*'
     title_full = 'Average NRMSE for Full Resolution Reconstruction' + addendum
-    title_4    = f'Average NRMSE for Reconstructing {int(resolutions[res_4_idx])} $\\text{{OPD}}_{{\\text{{TT}}}}$ Planes' + addendum
+    title_4    = f'Average NRMSE for Reconstructing {int(resolutions[res_4_idx])} OPL Planes' + addendum
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     fig.subplots_adjust(bottom=0.15)
