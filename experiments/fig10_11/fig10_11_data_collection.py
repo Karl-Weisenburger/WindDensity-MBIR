@@ -78,6 +78,7 @@ n_zmodes = N_OSA_MODES + 1   # OSA modes 0–44 individually + total MSE
 
 # zernike_mse_arr[vol, geo, zmode]
 zernike_mse_arr = np.zeros((N_VOLS, n_geos, n_zmodes))
+gt_mean_sq_arr  = np.zeros(N_VOLS)
 
 # ============================================================
 # MAIN LOOP
@@ -87,6 +88,10 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
     vol_gt = sim.generate_random_atmospheric_volume(
         cn2=1e-11, dim=recon_shape, delta=delta, L0=0.02, key=key
     )
+
+    # GT mean square at ZERN_RESOLUTION (for normalization in visualization)
+    _gt_z = np.array(va.divide_into_sections_of_opl(vol_gt, ZERN_RESOLUTION, 0.2))
+    gt_mean_sq_arr[vol_idx] = float(np.mean(_gt_z[roi_zern] ** 2))
 
     for geo_idx, (geo_label, half_ext, n_views) in enumerate(tqdm(GEOMETRIES, desc='Geometries', leave=False)):
         ct_model, weights = geo_models[geo_label]
@@ -116,6 +121,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
         np.savez(
             DATA_DIR / 'fig10_11_zernike_partial.npz',
             zernike_mse=zernike_mse_arr,
+            gt_mean_sq=gt_mean_sq_arr,
             n_completed=vol_idx + 1,
             geometry_names=np.array([g[0] for g in GEOMETRIES]),
             n_osa_modes=N_OSA_MODES,
@@ -131,6 +137,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
 np.savez(
     DATA_DIR / 'fig10_11_zernike.npz',
     zernike_mse=zernike_mse_arr,
+    gt_mean_sq=gt_mean_sq_arr,
     geometry_names=np.array([g[0] for g in GEOMETRIES]),
     n_osa_modes=N_OSA_MODES,
     zern_resolution=ZERN_RESOLUTION,

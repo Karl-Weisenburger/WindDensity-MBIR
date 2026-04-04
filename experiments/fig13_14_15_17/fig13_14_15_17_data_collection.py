@@ -87,6 +87,7 @@ n_zmodes = N_OSA_MODES + 1   # OSA modes 0–44 individually + total MSE
 nrmse_arr = np.zeros((N_NRMSE_VOLS, n_meas, n_eval, n_res))
 # zernike_mse_arr[vol, meas, zmode] — all N_VOLS
 zernike_mse_arr = np.zeros((N_VOLS, n_meas, n_zmodes))
+gt_mean_sq_arr  = np.zeros(N_VOLS)
 
 # ============================================================
 # MAIN LOOP
@@ -96,6 +97,10 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
     vol_gt = sim.generate_random_atmospheric_volume(
         cn2=1e-11, dim=recon_shape, delta=delta, L0=0.02, key=key
     )
+
+    # GT mean square at ZERN_RESOLUTION (for normalization in visualization)
+    _gt_z = np.array(va.divide_into_sections_of_opl(vol_gt, ZERN_RESOLUTION, 0.2))
+    gt_mean_sq_arr[vol_idx] = float(np.mean(_gt_z[roi_zern] ** 2))
 
     for meas_idx, proj_type in enumerate(tqdm(MEAS_TYPES, desc='Meas', leave=False)):
         sinogram = sim.collect_projection_measurement(
@@ -145,6 +150,7 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             DATA_DIR / 'fig13_14_15_17_7v8_partial.npz',
             nrmse=nrmse_arr,
             zernike_mse=zernike_mse_arr,
+            gt_mean_sq=gt_mean_sq_arr,
             n_completed=vol_idx + 1,
             resolutions=np.array(RESOLUTIONS),
             meas_types=np.array(MEAS_TYPES),

@@ -50,8 +50,8 @@ def main():
     plt.xticks(region_ind)
     plt.xlabel('Region in Wind Tunnel')
     plt.ylabel('NRMSE')
-    plt.title(r'Average NRMSE Relative to $OPD_{TT}$ Planes Along the Depth Axis'
-              '\n*TTP removed from block averaged planes*')
+    plt.title('Average NRMSE of OPL Planes Relative to Location Along the Depth Axis')
+    plt.grid(True)
     plt.tight_layout()
 
     for ext in ('pdf', 'png'):

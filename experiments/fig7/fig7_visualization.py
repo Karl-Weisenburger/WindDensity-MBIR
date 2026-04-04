@@ -81,8 +81,8 @@ def _plot_panel(ax, nrmse, full_extents_deg, num_views_list, res_idx, title, pan
     ax.set_title(title, fontsize=18)
     ax.grid(True)
     ax.set_axisbelow(True)
-    ax.text(0.5, -0.12, panel_label, transform=ax.transAxes,
-            ha='center', va='top', fontsize=20)
+    ax.text(0.5, -0.08, panel_label, transform=ax.transAxes,
+            ha='center', va='top', fontsize=24)
 
 
 def main():
@@ -108,7 +108,7 @@ def main():
     title_full = 'Average NRMSE for Full Resolution Reconstruction' + addendum
     title_4    = f'Average NRMSE for Reconstructing {int(resolutions[res_4_idx])} OPL Planes' + addendum
 
-    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
     fig.subplots_adjust(bottom=0.15)
 
     _plot_panel(axes[0], nrmse, full_extents_deg, num_views_list, res_full_idx,
