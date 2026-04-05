@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 
 # ---- Paths ----------------------------------------------------------------
 DATA_FILE = Path(__file__).parent / 'data' / 'fig13_14_15_17_7v8.npz'
-OUT_DIR   = Path(__file__).parent
+OUT_DIR   = Path(__file__).parent / 'figures'
 
 
 def main():
@@ -32,6 +32,7 @@ def main():
             f'Data not found: {DATA_FILE}\n'
             'Run fig13_14_15_17_data_collection.py first.'
         )
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     data        = np.load(DATA_FILE, allow_pickle=True)
     nrmse       = data['nrmse']           # (vols, meas, eval, res)

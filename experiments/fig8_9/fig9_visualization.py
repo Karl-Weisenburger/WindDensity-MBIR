@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 # ---- Paths ----------------------------------------------------------------
 DATA_FILE = Path(__file__).parent / 'data' / 'fig9_regional_nrmse.npz'
-OUT_DIR   = Path(__file__).parent / 'data'
+OUT_DIR   = Path(__file__).parent / 'figures'
 
 
 def main():
@@ -27,6 +27,7 @@ def main():
             f'Data not found: {DATA_FILE}\n'
             'Run fig9_data_collection.py first.'
         )
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     data           = np.load(DATA_FILE, allow_pickle=True)
     nrmse_regional = data['nrmse_regional']   # (N_VOLS, n_geos, N_SECTIONS)

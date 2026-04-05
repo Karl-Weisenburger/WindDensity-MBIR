@@ -21,7 +21,7 @@ from matplotlib.lines import Line2D
 
 # ---- Paths ----------------------------------------------------------------
 DATA_FILE = Path(__file__).parent / 'data' / 'fig7_geometry_sweep.npz'
-OUT_DIR   = Path(__file__).parent / 'data'
+OUT_DIR   = Path(__file__).parent / 'figures'
 
 # ---- Style ----------------------------------------------------------------
 COLORS  = ['#0072B2', '#D55E00', '#CC79A7', '#009E73', '#F0E442']
@@ -97,6 +97,8 @@ def main():
     full_extents_deg = data['full_extents_deg']
     num_views_list   = data['num_views_list']
     resolutions      = data['resolutions']
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     res_full_idx = len(resolutions) - 1            # last entry = full resolution
     res_4_candidates = np.where(resolutions == 4)[0]

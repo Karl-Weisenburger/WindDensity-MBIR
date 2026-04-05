@@ -52,24 +52,18 @@ print('Simulating raw data...')
 cn2=1e-11  # Refractive-index structure parameter [m^{-2/3}]
 delta=pixel_pitch/100  # pixel pitch of the phase volume in meters
 L0=0.02  # Outer scale in meters
-seed=42  # random seed for phase volume generation
+seed=17  # random seed for phase volume generation
 
-#check if CUDA-enabled GPU is available
-devices = jax.devices()
-# Filter for CUDA devices
-cuda_devices = [d for d in devices if d.platform == 'cuda']
-if cuda_devices:
-    print("CUDA-enabled GPU(s) found. Will generate new atmospheric phase volume on GPU.")
-    key = jax.random.PRNGKey(42)
-    phase_volume = sim.generate_random_atmospheric_volume(cn2, optical_params.test_region_pixel_dims, delta, L0=L0, l0=0.0, key=key)
-else:
-    print("No CUDA-enabled GPU found for JAX. Using pre-generated atmospheric phase volume.")
-    phase_volume=jnp.zeros((optical_params.test_region_pixel_dims))
-    top_slice=int(optical_params.test_region_pixel_dims[2]//2+optical_params.beam_diameter_pixels/2)
-    bottom_slice=int(optical_params.test_region_pixel_dims[2]//2-optical_params.beam_diameter_pixels/2)
-    data_dir = os.path.join(script_dir, 'data')
-    phase_volume_path = os.path.join(data_dir, 'pre_generated_phase_volume.npy')
-    phase_volume= phase_volume.at[:,:,bottom_slice:top_slice].set(jnp.load(phase_volume_path))
+# Warn if no CUDA GPU is visible — generation still runs on CPU but will be slow.
+cuda_devices = [d for d in jax.devices() if d.platform == 'cuda']
+if not cuda_devices:
+    print("WARNING: no CUDA-enabled GPU found for JAX. Volume generation will "
+          "run on CPU and may be slow.")
+
+key = jax.random.PRNGKey(seed)
+phase_volume = sim.generate_random_atmospheric_volume(
+    cn2, optical_params.test_region_pixel_dims, delta, L0=L0, l0=0.0, key=key,
+)
 
 # create mbirjax CT model and FOV mask
 ct_model, FOV = sim.create_ct_model_and_weights_for_simulation(optical_params)

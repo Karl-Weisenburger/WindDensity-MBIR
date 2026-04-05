@@ -34,7 +34,7 @@ import seaborn as sns
 
 # ---- Paths ----------------------------------------------------------------
 DATA_FILE = Path(__file__).parent / 'data' / 'fig10_11_zernike.npz'
-OUT_DIR   = Path(__file__).parent
+OUT_DIR   = Path(__file__).parent / 'figures'
 
 # ---- Style ----------------------------------------------------------------
 sns.set_style('whitegrid')
@@ -275,6 +275,7 @@ def main():
         raise FileNotFoundError(
             f'Data not found: {DATA_FILE}\nRun fig10_11_data_collection.py first.'
         )
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     data       = np.load(DATA_FILE, allow_pickle=True)
     zern_mse   = data['zernike_mse']              # (N_VOLS, n_geos, n_zmodes)

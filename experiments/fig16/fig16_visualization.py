@@ -1,10 +1,13 @@
 """
 Figs 16a and 16b: MBIR — OPL vs OPD_TT measurement comparison, 7v8 geometry.
 
-Fig 16a: GT + OPL-measurement recon + OPD_TT-measurement recon — OPL planes (zern_mode_index=0)
+Fig 16a: GT + OPL-measurement recon + OPD_TT-measurement recon — OPL planes   (zern_mode_index=0)
 Fig 16b: GT + OPL-measurement recon + OPD_TT-measurement recon — OPD_TT planes (zern_mode_index=2)
 
-Both use the same volume (seed=17) and 7v8 geometry.
+Both use the same volume (seed=17) and 7v8 geometry. The two panels are
+placed side-by-side in a single combined figure with (a)/(b) labels
+underneath, matching the Fig 7 layout.
+
 Volume and reconstructions are cached to data/ on the first run.
 """
 
@@ -52,8 +55,9 @@ STOP_THRESHOLD_CHANGE_PCT = 0.2
 ANGLE_EXTENT_DEG = 4.0
 N_VIEWS          = 7
 
-OUT_DIR  = Path(__file__).parent / 'data'
-VOL_PATH = Path(__file__).parents[1] / 'shared_data' / f'vol_seed{SEED}.npy'
+RECON_CACHE_DIR = Path(__file__).parent / 'data'
+OUT_DIR         = Path(__file__).parent / 'figures'
+VOL_PATH        = Path(__file__).parents[1] / 'shared_data' / f'vol_seed{SEED}.npy'
 
 # ============================================================
 # Geometry setup
@@ -83,7 +87,60 @@ def _load_or_run_recon(cache_path, compute_fn):
     return np.array(recon)
 
 
+# ============================================================
+# Per-panel setup: prepare images, NRMSE, and labels
+# ============================================================
+def _panel_inputs(vol_gt, recon_opl, recon_opdtt, zern_mode_index, plane_name, fig_id):
+    gt_images, roi_beam = prepare_opl_images(
+        vol_gt, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
+        BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+
+    m1_type = ['OPL', 'OPD', 'OPD_{TT}']
+    m2_type = ['OPL', 'OPD', r'$\text{OPD}_{\text{TT}}$']
+
+    recon_images_list = []
+    nrmse_list        = []
+    recon_labels      = []
+    for recon_3d, meas_str in [(recon_opl, 'OPL'), (recon_opdtt, r'$OPD_{TT}$')]:
+        r_imgs, _ = prepare_opl_images(
+            recon_3d, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
+            BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+        )
+        recon_images_list.append(r_imgs)
+        nrmse_list.append(compute_per_section_nrmse(gt_images, r_imgs, roi_beam))
+        recon_labels.append(f'${m1_type[zern_mode_index]}$ with {meas_str} Measurements')
+
+    # Full-resolution NRMSE printout
+    gt_full, roi_full = prepare_opl_images(
+        vol_gt, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+    w = 10
+    print(f'\n--- Fig {fig_id} NRMSE Summary ({plane_name} planes) ---')
+    print(f'{"Measurement":<{w}}  Full-res NRMSE  {SECTIONS}-section NRMSE')
+    for (recon_3d, meas_str), r_imgs in zip(
+        [(recon_opl, 'OPL'), (recon_opdtt, 'OPD_TT')], recon_images_list
+    ):
+        recon_full, _ = prepare_opl_images(
+            recon_3d, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+        )
+        nrmse_full     = compute_overall_nrmse(gt_full,   recon_full, roi_full)
+        nrmse_sections = compute_overall_nrmse(gt_images, r_imgs,     roi_beam)
+        print(f'{meas_str:<{w}}  {nrmse_full:.4f}          {nrmse_sections:.4f}')
+
+    return dict(
+        gt_images              = gt_images,
+        recon_images_list      = recon_images_list,
+        nrmse_per_section_list = nrmse_list,
+        recon_labels           = recon_labels,
+        gt_suptitle            = f'${m1_type[zern_mode_index]}$ Ground Truth Planes',
+        fig_suptitle           = f'{m2_type[zern_mode_index]} Reconstruction and Model Mismatch',
+        roi_beam               = roi_beam,
+    )
+
+
 def main():
+    RECON_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # --- Volume ---
@@ -111,68 +168,33 @@ def main():
         )
         return recon
 
-    recon_opl   = _load_or_run_recon(OUT_DIR / f'recon_seed{SEED}_7v8_OPL.npy',   run_opl_recon)
-    recon_opdtt = _load_or_run_recon(OUT_DIR / f'recon_seed{SEED}_7v8_OPD_TT.npy', run_opdtt_recon)
+    recon_opl   = _load_or_run_recon(RECON_CACHE_DIR / f'recon_seed{SEED}_7v8_OPL.npy',    run_opl_recon)
+    recon_opdtt = _load_or_run_recon(RECON_CACHE_DIR / f'recon_seed{SEED}_7v8_OPD_TT.npy', run_opdtt_recon)
 
-    m1_type = ['OPL', 'OPD', 'OPD_{TT}']
-    m2_type = ['OPL', 'OPD', r'$\text{OPD}_{\text{TT}}$']
+    # --- Panel inputs ---
+    panel_a = _panel_inputs(vol_gt, recon_opl, recon_opdtt, zern_mode_index=0, plane_name='OPL',    fig_id='16a')
+    panel_b = _panel_inputs(vol_gt, recon_opl, recon_opdtt, zern_mode_index=2, plane_name='OPD_TT', fig_id='16b')
 
-    # --- Figs 16a (OPL planes) and 16b (OPD_TT planes) ---
-    for fig_id, zern_mode_index, plane_name in [
-        ('16a', 0, 'OPL'),
-        ('16b', 2, 'OPD_TT'),
-    ]:
-        gt_images, roi_beam = prepare_opl_images(
-            vol_gt, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
-            BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-        )
+    # --- Combined figure: two columns side by side, each the size of a
+    #     stand-alone panel, with (a)/(b) labels underneath. ---
+    sections   = panel_a['gt_images'].shape[0]
+    n_recons   = len(panel_a['recon_images_list'])
+    panel_w    = sections * 4.3
+    panel_h    = (n_recons + 1) * 4.9
+    combined_figsize = (panel_w * 2, panel_h)
 
-        recon_images_list  = []
-        nrmse_list         = []
-        recon_labels       = []
+    fig = plt.figure(figsize=combined_figsize, constrained_layout=True)
+    column_subfigs = fig.subfigures(nrows=1, ncols=2)
 
-        for recon_3d, meas_str in [(recon_opl, 'OPL'), (recon_opdtt, r'$OPD_{TT}$')]:
-            r_imgs, _ = prepare_opl_images(
-                recon_3d, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
-                BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-            )
-            nrmse = compute_per_section_nrmse(gt_images, r_imgs, roi_beam)
-            recon_images_list.append(r_imgs)
-            nrmse_list.append(nrmse)
-            recon_labels.append(f'${m1_type[zern_mode_index]}$ with {meas_str} Measurements')
+    for col_subfig, panel, label in zip(column_subfigs, (panel_a, panel_b), ('(a)', '(b)')):
+        plot_recon_figure(parent=col_subfig, **panel)
+        col_subfig.text(0.5, -0.04, label, ha='center', va='top', fontsize=40)
 
-        # --- Full-resolution NRMSE printout ---
-        gt_full, roi_full = prepare_opl_images(
-            vol_gt, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-        )
-        w = 10
-        print(f'\n--- Fig {fig_id} NRMSE Summary ({plane_name} planes) ---')
-        print(f'{"Measurement":<{w}}  Full-res NRMSE  {SECTIONS}-section NRMSE')
-        for (recon_3d, meas_str), r_imgs, nrmse_sections_list in zip(
-            [(recon_opl, 'OPL'), (recon_opdtt, 'OPD_TT')], recon_images_list, nrmse_list
-        ):
-            recon_full, _ = prepare_opl_images(
-                recon_3d, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-            )
-            nrmse_full     = compute_overall_nrmse(gt_full,   recon_full, roi_full)
-            nrmse_sections = compute_overall_nrmse(gt_images, r_imgs,     roi_beam)
-            print(f'{meas_str:<{w}}  {nrmse_full:.4f}          {nrmse_sections:.4f}')
-
-        fig = plot_recon_figure(
-            gt_images              = gt_images,
-            recon_images_list      = recon_images_list,
-            nrmse_per_section_list = nrmse_list,
-            recon_labels           = recon_labels,
-            gt_suptitle            = f'${m1_type[zern_mode_index]}$ Ground Truth Planes',
-            fig_suptitle           = f'{m2_type[zern_mode_index]} Reconstruction and Model Mismatch',
-            roi_beam               = roi_beam,
-        )
-
-        for ext in ('pdf', 'png'):
-            out = OUT_DIR / f'fig{fig_id}_measurement_comparison_{plane_name}.{ext}'
-            fig.savefig(out, bbox_inches='tight', dpi=200)
-            print(f'Saved {out}')
-        plt.show()
+    for ext in ('pdf', 'png'):
+        out = OUT_DIR / f'fig16_measurement_comparison.{ext}'
+        fig.savefig(out, bbox_inches='tight', dpi=200)
+        print(f'Saved {out}')
+    plt.show()
 
 
 if __name__ == '__main__':

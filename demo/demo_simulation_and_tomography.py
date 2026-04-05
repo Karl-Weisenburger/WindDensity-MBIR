@@ -1,121 +1,179 @@
-#Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+# Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+"""
+Demo: simulate OPD_TT measurements from a cached atmospheric phase volume
+and perform MBIR reconstruction.
 
-import jax
+Steps
+-----
+1. Define the viewing geometry and save a schematic.
+2. Load (or, first time only, generate) atmospheric phase volume
+   ``vol_seed17.npy`` under ``experiments/shared_data/``. This is the same
+   volume used by Fig 6 / Fig 12 / Fig 16 in the paper, so running the
+   demo first pre-populates the cache used by those figure scripts and
+   vice versa.
+3. Simulate OPD_TT projection measurements and run MBIR reconstruction
+   with ``max_over_relaxation = 1.25`` (matches the paper experiments).
+4. Visualise the reconstruction with the same layout used by Figs 6, 12,
+   and 16 (``plot_recon_figure``).
+"""
+
+import os
+os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
+
+import sys
+from pathlib import Path
+
+# Make both `demo_utils` and `experiments.*` importable regardless of where
+# this script is launched from.
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT  = SCRIPT_DIR.parent
+sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(REPO_ROOT))
+
+import numpy as np
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
+
 import winddensity_mbir.simulation as sim
 import winddensity_mbir.visualization_and_analysis as va
 import winddensity_mbir.utilities as utils
 import winddensity_mbir.configuration_params as config
-import matplotlib.pyplot as plt
-from demo_utils import display_planes_from_recon_and_ground_truth
-import os
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-output_dir = os.path.join(script_dir, 'output')
-os.makedirs(output_dir, exist_ok=True)
+from experiments.recon_visualization_prep import (
+    load_or_generate_volume,
+    prepare_opl_images,
+    compute_per_section_nrmse,
+    plot_recon_figure,
+)
 
-"""
-This file is a demo script for simulating OPD_TT measurements with simulated data and performing tomographic
- reconstruction. There are three steps:
-    1. First, we set the viewing configuration parameters and visual the geometry
-    2. Next, we generate (or preload) a volume of atmospheric phase, and simulate OPD_TT measurements
-    3. Lastly, we use the OPD_TT measurements and mbirjax to perform MBIR reconstruction.
-"""
+# ---------------------------------------------------------------------------
+# Output directory
+# ---------------------------------------------------------------------------
+OUTPUT_DIR = SCRIPT_DIR / 'output'
+OUTPUT_DIR.mkdir(exist_ok=True)
 
-## Step 1: Set simulation parameters
-test_region_dims=(20,12.5,2) # in cms (depth axis, stream-wise axis ,vertical axis)
-beam_diameter = 2  # in cms
-pixel_pitch = 0.03125  # in cms
+# ---------------------------------------------------------------------------
+# Simulation parameters (must match experiments/shared_data/vol_seed17.npy
+# so that the cached volume is reusable across the demo and figure scripts)
+# ---------------------------------------------------------------------------
+SEED             = 17
+CM_PER_PIXEL     = 25.0 / 800                      # 0.03125 cm
+RECON_SHAPE      = (640, 400, 64)
+NUM_ROWS, NUM_COLS, NUM_SLICES = RECON_SHAPE
+TEST_REGION_DIMS = (NUM_ROWS * CM_PER_PIXEL,
+                    NUM_COLS * CM_PER_PIXEL,
+                    NUM_SLICES * CM_PER_PIXEL)     # (20, 12.5, 2) cm
+BEAM_DIAM_CM     = 2.0
+BEAM_PIXEL_DIAM  = int(round(BEAM_DIAM_CM / CM_PER_PIXEL))  # 64
+TOTAL_LENGTH_M   = NUM_ROWS * CM_PER_PIXEL / 100.0          # 0.20 m
 
-#visualization parameters
-num_planes=4
-zernike_range=(2,11)
+# Atmospheric-turbulence parameters (same as the experiments)
+CN2   = 1e-11
+L0    = 0.02
+DELTA = 0.01 * CM_PER_PIXEL
 
-# Define sensor locations in cms (depth axis, stream-wise axis) with respect to the center of the test region
-sensor_one = jnp.array([26, -2.5])
-sensor_two = jnp.array([26, 0])
-sensor_three = jnp.array([26, 2.5])
-sensor_locations = [sensor_one, sensor_two, sensor_three]
+# MBIR reconstruction settings
+MAX_OVER_RELAXATION       = 1.25
+MAX_ITERATIONS            = 20
+STOP_THRESHOLD_CHANGE_PCT = 1
 
-# Define beam angles in radians for each sensor, defined with respect to the depth axis (i.e., 0 radians is along the depth axis)
-sensor_one_angles = jnp.array([-6.5, -5.5, -4.5]) * jnp.pi / 180
-sensor_two_angles = jnp.array([-1, 0, 1]) * jnp.pi / 180
-sensor_three_angles = jnp.array([4.5, 5.5, 6.5]) * jnp.pi / 180
+# Visualization settings
+SECTIONS        = 4
+ZERN_MODE_INDEX = 2   # 2 = OPD_TT (piston + tip + tilt removed)
 
-# sensor_three_angles = jnp.array([4.5, 5.5, 6.5]) * jnp.pi / 180
-beam_angles=[sensor_one_angles,sensor_two_angles,sensor_three_angles]
+VOL_PATH = REPO_ROOT / 'experiments' / 'shared_data' / f'vol_seed{SEED}.npy'
 
-# collect optical setup information
-optical_params=config.define_optical_setup(sensor_locations, beam_angles, test_region_dims, pixel_pitch,beam_fov=beam_diameter, windows=True)
 
-# visualize the viewing configuration
-va.display_viewing_configuration_schematic(optical_params,roi_thickness_and_num_regions=(optical_params.beam_diameter_cm,1))
-plt.savefig(os.path.join(output_dir, 'Viewing_Configuration_Schematic.png'))
+# ---------------------------------------------------------------------------
+# Step 1 — Viewing geometry
+# ---------------------------------------------------------------------------
+sensor_locations = [
+    jnp.array([26, -2.5]),
+    jnp.array([26,  0.0]),
+    jnp.array([26,  2.5]),
+]
+beam_angles = [
+    jnp.array([-6.5, -5.5, -4.5]) * jnp.pi / 180,
+    jnp.array([-1.0,  0.0,  1.0]) * jnp.pi / 180,
+    jnp.array([ 4.5,  5.5,  6.5]) * jnp.pi / 180,
+]
 
-## Step 2: Simulate atmospheric phase volume
-cn2=1e-11  # Refractive-index structure parameter [m^{-2/3}]
-delta=pixel_pitch/100  # pixel pitch of the phase volume in meters
-L0=0.02  # Outer scale in meters
-seed=42  # random seed for phase volume generation
+optical_params = config.define_optical_setup(
+    sensor_locations, beam_angles,
+    TEST_REGION_DIMS, CM_PER_PIXEL,
+    beam_fov=BEAM_DIAM_CM, windows=True,
+)
 
-#check if CUDA-enabled GPU is available
-devices = jax.devices()
+va.display_viewing_configuration_schematic(
+    optical_params,
+    roi_thickness_and_num_regions=(optical_params.beam_diameter_cm, 1),
+)
+plt.savefig(OUTPUT_DIR / 'Viewing_Configuration_Schematic.png',
+            bbox_inches='tight', dpi=200)
 
-# Filter for CUDA devices
-cuda_devices = [d for d in devices if d.platform == 'cuda']
 
-if cuda_devices:
-    print("CUDA-enabled GPU(s) found. Will generate new atmospheric phase volume on GPU.")
-    key = jax.random.PRNGKey(42)
-    phase_volume = sim.generate_random_atmospheric_volume(cn2, optical_params.test_region_pixel_dims, delta, L0=L0, l0=0.0, key=key)
-else:
-    print("No CUDA-enabled GPU found for JAX. Using pre-generated atmospheric phase volume.")
-    data_dir = os.path.join(script_dir, 'data')
-    phase_volume_path = os.path.join(data_dir, 'pre_generated_phase_volume.npy')
-    phase_volume = jnp.load(phase_volume_path)
+# ---------------------------------------------------------------------------
+# Step 2 — Load (or generate) atmospheric phase volume
+# ---------------------------------------------------------------------------
+print('\nLoading atmospheric phase volume...')
+phase_volume_np = load_or_generate_volume(
+    seed=SEED,
+    recon_shape=RECON_SHAPE,
+    delta=DELTA,
+    L0=L0,
+    cn2=CN2,
+    cache_path=VOL_PATH,
+)
+phase_volume = jnp.array(phase_volume_np)
 
-## Simulate OPD_TT measurements
-# create mbirjax CT model and FOV mask
+
+# ---------------------------------------------------------------------------
+# Step 3 — Simulate OPD_TT measurements and run MBIR reconstruction
+# ---------------------------------------------------------------------------
+print('\nCreating CT model and FOV mask...')
 ct_model, FOV = sim.create_ct_model_and_weights_for_simulation(optical_params)
-print('\nCT model and FOV mask created.')
+ct_model.max_over_relaxation = MAX_OVER_RELAXATION #for better convergence stability
 
-# simulate tip-tilt removed OPD views
-print('\nSimulating OPD_TT measurements...')
-OPD_views=sim.collect_projection_measurement(ct_model, FOV, phase_volume, projection_type='OPD_TT')
-print('\nSimulated OPD_TT measurements collected.')
+print('Simulating OPD_TT measurements...')
+OPD_views = sim.collect_projection_measurement(
+    ct_model, FOV, phase_volume, projection_type='OPD_TT',
+)
 
-## Perform tomographic reconstruction using mbirjax
-print('\nStarting tomographic reconstruction using mbirjax and FBP...')
-
-#MBIR reconstruction
-recon,_=ct_model.recon(OPD_views, weights=FOV)
-
-# scale-corrected FBP reconstruction (uncomment to use)
-# recon,_=ct_model.direct_recon(OPD_views)
-
-print('Tomographic reconstruction completed.')
+print(f'Running MBIR reconstruction...')
+recon, _ = ct_model.recon(
+    OPD_views, weights=FOV,
+    max_iterations=MAX_ITERATIONS,
+    stop_threshold_change_pct=STOP_THRESHOLD_CHANGE_PCT,
+)
+recon_np = np.array(recon)
+print('Reconstruction complete.')
 
 
-# visualize results
-ROI=va.generate_beam_path_roi_mask(optical_params.test_region_pixel_dims, optical_params.beam_diameter_pixels)
+# ---------------------------------------------------------------------------
+# Step 4 — Visualise reconstruction in the Fig 6 / 12 / 16 style
+# ---------------------------------------------------------------------------
+gt_images,    roi_beam = prepare_opl_images(
+    phase_volume_np, ZERN_MODE_INDEX, SECTIONS, TOTAL_LENGTH_M,
+    BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+)
+recon_images, _        = prepare_opl_images(
+    recon_np,        ZERN_MODE_INDEX, SECTIONS, TOTAL_LENGTH_M,
+    BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+)
 
-print(f'\nReducing volumes into {num_planes} OPL planes...')
-recon_planes = va.divide_into_sections_of_opl(recon, num_planes, test_region_dims[0])
-gt_planes = va.divide_into_sections_of_opl(phase_volume, num_planes, test_region_dims[0])
-ROI_planes = ROI[:num_planes]
+nrmse_per_section = compute_per_section_nrmse(gt_images, recon_images, roi_beam)
 
-print('\nConverting OPL planes into $\\text{OPD}_{\\text{TT}}$...')
-recon_planes_OPD = utils.remove_tip_tilt_piston(recon_planes, ROI_planes)
-gt_planes_OPD = utils.remove_tip_tilt_piston(gt_planes, ROI_planes)
+fig = plot_recon_figure(
+    gt_images              = gt_images,
+    recon_images_list      = [recon_images],
+    nrmse_per_section_list = [nrmse_per_section],
+    recon_labels           = [
+        r'WindDensity-MBIR Reconstruction from $\mathrm{OPD}_{\mathrm{TT}}$ measurements',
+    ],
+    gt_suptitle            = r'$\mathrm{OPD}_{\mathrm{TT}}$ Ground Truth Planes',
+    fig_suptitle           = 'Demo: MBIR Reconstruction',
+    roi_beam               = roi_beam,
+)
+fig.savefig(OUTPUT_DIR / 'Recon_Planes.png', bbox_inches='tight', dpi=200)
 
-display_planes_from_recon_and_ground_truth(recon_planes_OPD, gt_planes_OPD, ROI_planes, title=f'Reconstruction of {num_planes}' + ' $\\text{OPD}_{\\text{TT}}$ planes')
-plt.savefig(os.path.join(output_dir, 'Recon_Planes.png'))
-
-
-print(f'\nIsolating specific Zernike Modes of radial degree {zernike_range[0]} to {zernike_range[1]}')
-recon_planes_zern=jnp.array(va.isolate_zernike_mode_range_for_volume(recon_planes, zernike_range[0], zernike_range[1], ROI_planes))
-gt_planes_zern=jnp.array(va.isolate_zernike_mode_range_for_volume(gt_planes, zernike_range[0], zernike_range[1], ROI_planes))
-
-display_planes_from_recon_and_ground_truth(recon_planes_zern,gt_planes_zern,ROI_planes,title=f'Reconstruction of {num_planes} planes, isolating zernike radial degrees {zernike_range[0]} to {zernike_range[1]}')
-plt.savefig(os.path.join(output_dir, 'Zernike_Isolated_Recon_Planes.png'))
 plt.show()

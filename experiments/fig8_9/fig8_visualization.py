@@ -12,7 +12,7 @@ import winddensity_mbir.visualization_and_analysis as va
 import winddensity_mbir.configuration_params as config
 
 # ---- Paths ----------------------------------------------------------------
-OUT_DIR = Path(__file__).parent / 'data'
+OUT_DIR = Path(__file__).parent / 'figures'
 
 # ---- Shared geometry parameters -------------------------------------------
 CM_PER_PIXEL   = 25.0 / 800
@@ -39,6 +39,7 @@ def _build_optical_setup(half_extent_deg, n_views):
 
 def main():
     """Plot Fig 8a (3v2) and Fig 8b (3v16) geometry overhead schematics."""
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     setups = [
         ('Fig 8a: 3 views, 2° total (3v2)',   1.0, 3),
         ('Fig 8b: 3 views, 16° total (3v16)', 8.0, 3),

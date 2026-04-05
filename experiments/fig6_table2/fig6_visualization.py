@@ -54,8 +54,9 @@ STOP_THRESHOLD_CHANGE_PCT = 1
 ANGLE_EXTENT_DEG = 4.0   # half-extent
 N_VIEWS          = 7
 
-OUT_DIR  = Path(__file__).parent / 'data'
-VOL_PATH = Path(__file__).parents[1] / 'shared_data' / f'vol_seed{SEED}.npy'
+RECON_CACHE_DIR = Path(__file__).parent / 'data'
+OUT_DIR         = Path(__file__).parent / 'figures'
+VOL_PATH        = Path(__file__).parents[1] / 'shared_data' / f'vol_seed{SEED}.npy'
 
 # ============================================================
 # Geometry setup
@@ -86,6 +87,7 @@ def _load_or_run_recon(cache_path, compute_fn):
 
 
 def main():
+    RECON_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # --- Volume ---
@@ -106,14 +108,14 @@ def main():
         )
         return recon
 
-    recon_mbir = _load_or_run_recon(OUT_DIR / f'recon_seed{SEED}_7v8_MBIR.npy', run_mbir)
+    recon_mbir = _load_or_run_recon(RECON_CACHE_DIR / f'recon_seed{SEED}_7v8_MBIR.npy', run_mbir)
 
     # --- Scale-corrected FBP ---
     def run_fbp_scaled():
         recon_fbp = ct_model.direct_recon(sinogram)
         return utils.correct_recon_scaling(recon_fbp, ct_model, sinogram, weights)
 
-    recon_fbp = _load_or_run_recon(OUT_DIR / f'recon_seed{SEED}_7v8_FBP_scaled.npy', run_fbp_scaled)
+    recon_fbp = _load_or_run_recon(RECON_CACHE_DIR / f'recon_seed{SEED}_7v8_FBP_scaled.npy', run_fbp_scaled)
 
     # --- OPL image preparation ---
     gt_images,    roi_beam = prepare_opl_images(

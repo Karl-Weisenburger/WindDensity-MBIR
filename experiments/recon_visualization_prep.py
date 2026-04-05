@@ -154,7 +154,8 @@ def compute_overall_nrmse(gt_beam, recon_beam, roi_beam):
 # ---------------------------------------------------------------------------
 
 def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
-                      recon_labels, gt_suptitle, fig_suptitle, roi_beam=None):
+                      recon_labels, gt_suptitle, fig_suptitle, roi_beam=None,
+                      parent=None):
     """
     Standard reconstruction visualisation layout (Figs 6, 12, 16).
 
@@ -168,21 +169,27 @@ def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
         nrmse_per_section_list : list of lists — nrmse_per_section_list[r][s] = NRMSE
         recon_labels           : list of str — subfigure suptitles for each recon row
         gt_suptitle            : str — subfigure suptitle for GT row
-        fig_suptitle           : str — overall figure suptitle
+        fig_suptitle           : str — figure/subfigure suptitle for this panel
         roi_beam               : np.ndarray bool (sections, H, W) or None — pixels outside
                                  this mask are set to NaN so they render white
+        parent                 : matplotlib Figure or SubFigure to draw into. If None, a new
+                                 Figure is created with the default per-panel sizing.
 
     Returns:
-        matplotlib.figure.Figure
+        matplotlib.figure.Figure — the top-level figure containing the panel.
     """
     sections  = gt_images.shape[0]
     n_recons  = len(recon_images_list)
     figsize   = (sections * 4.3, (n_recons + 1) * 4.9)
 
-    fig = plt.figure(figsize=figsize, constrained_layout=True)
-    fig.suptitle(fig_suptitle, fontsize=40, y=1.06)
+    if parent is None:
+        container = plt.figure(figsize=figsize, constrained_layout=True)
+    else:
+        container = parent
 
-    subfigs = fig.subfigures(nrows=n_recons + 1, ncols=1)
+    container.suptitle(fig_suptitle, fontsize=40, y=1.06)
+
+    subfigs = container.subfigures(nrows=n_recons + 1, ncols=1)
 
     # vmin/vmax: GT and first recon, restricted to ROI pixels (matching original masked-array behavior)
     if roi_beam is not None:
@@ -224,7 +231,8 @@ def plot_recon_figure(gt_images, recon_images_list, nrmse_per_section_list,
             roi          = roi_beam,
         )
 
-    return fig
+    # Return the top-level figure regardless of whether we created it.
+    return container if parent is None else container.figure
 
 
 def _fill_row(subfig, images, subtitles, title_kwargs, vmin, vmax,

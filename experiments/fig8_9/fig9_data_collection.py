@@ -10,6 +10,9 @@ import jax.numpy as jnp
 from jax import random
 from tqdm import trange, tqdm
 
+from experiments.runtime_warning import warn_and_confirm
+warn_and_confirm('fig9')
+
 import winddensity_mbir.configuration_params as config
 import winddensity_mbir.simulation as sim
 import winddensity_mbir.visualization_and_analysis as va

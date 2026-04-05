@@ -40,12 +40,12 @@ run_script() {
 # ------------------------------------------------------------------
 # Fig 6 / Table 2: FBP vs MBIR comparison (100 vols, 3 geometries)
 # ------------------------------------------------------------------
-run_script "fig6/table2_data_collection.py" "table2"
+run_script "fig6_table2/table2_data_collection.py" "table2"
 
 # ------------------------------------------------------------------
 # Fig 7 / Table 1: Geometry sweep NRMSE + performance (100 vols)
 # ------------------------------------------------------------------
-run_script "fig7/fig7_data_collection.py" "fig7"
+run_script "fig7_table1/fig7_data_collection.py" "fig7_table1"
 
 # ------------------------------------------------------------------
 # Fig 8/9: Regional NRMSE for 3v2 and 3v16 (3000 vols)

@@ -4,7 +4,10 @@ Figs 12a and 12b: MBIR reconstructions — 3v2 vs 11v16 geometry comparison.
 Fig 12a: GT + 11v16 recon + 3v2 recon — OPL planes  (zern_mode_index=0)
 Fig 12b: GT + 11v16 recon + 3v2 recon — OPD_TT planes (zern_mode_index=2)
 
-Both use the same volume (seed=17) and MBIR reconstructions with OPD_TT sinograms.
+Both use the same volume (seed=17) and MBIR reconstructions with OPD_TT
+sinograms. The two panels are placed side-by-side in a single combined
+figure with (a)/(b) labels underneath, matching the Fig 7 layout.
+
 Volume and reconstructions are cached to data/ on the first run.
 """
 
@@ -54,8 +57,9 @@ GEOMETRIES = [
     ('11v16', 8.0, 11),
 ]
 
-OUT_DIR  = Path(__file__).parent / 'data'
-VOL_PATH = Path(__file__).parents[1] / 'shared_data' / f'vol_seed{SEED}.npy'
+RECON_CACHE_DIR = Path(__file__).parent / 'data'
+OUT_DIR         = Path(__file__).parent / 'figures'
+VOL_PATH        = Path(__file__).parents[1] / 'shared_data' / f'vol_seed{SEED}.npy'
 
 # ============================================================
 # Build geometry models
@@ -88,7 +92,61 @@ def _load_or_run_recon(cache_path, compute_fn):
     return np.array(recon)
 
 
+# ============================================================
+# Per-panel setup: prepare images, NRMSE, and labels
+# ============================================================
+def _panel_inputs(vol_gt, recons, zern_mode_index, plane_name, fig_id):
+    """Build every input plot_recon_figure needs for one panel (a or b)."""
+    gt_images, roi_beam = prepare_opl_images(
+        vol_gt, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
+        BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+
+    # Order: 11v16 first, then 3v2
+    recon_images_list = []
+    nrmse_list        = []
+    recon_labels = [
+        r'11v,$16^\circ$-geometry with WindDensity-MBIR and $OPD_{TT}$ Measurements',
+        r'3v,$2^\circ$-geometry with WindDensity-MBIR and $OPD_{TT}$ Measurements',
+    ]
+    for geo_label in ['11v16', '3v2']:
+        r_imgs, _ = prepare_opl_images(
+            recons[geo_label], zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
+            BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+        )
+        recon_images_list.append(r_imgs)
+        nrmse_list.append(compute_per_section_nrmse(gt_images, r_imgs, roi_beam))
+
+    # Full-resolution NRMSE printout
+    gt_full, roi_full = prepare_opl_images(
+        vol_gt, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+    )
+    w = 12
+    print(f'\n--- Fig {fig_id} NRMSE Summary ({plane_name} planes) ---')
+    print(f'{"Geometry":<{w}}  Full-res NRMSE  {SECTIONS}-section NRMSE')
+    for geo_label, r_imgs in zip(['11v16', '3v2'], recon_images_list):
+        recon_full, _ = prepare_opl_images(
+            recons[geo_label], zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
+        )
+        nrmse_full     = compute_overall_nrmse(gt_full,   recon_full, roi_full)
+        nrmse_sections = compute_overall_nrmse(gt_images, r_imgs,     roi_beam)
+        print(f'{geo_label:<{w}}  {nrmse_full:.4f}          {nrmse_sections:.4f}')
+
+    m1_type = ['OPL', 'OPD', 'OPD_{TT}']
+    m2_type = ['OPL', 'OPD', r'$\text{OPD}_{\text{TT}}$']
+    return dict(
+        gt_images              = gt_images,
+        recon_images_list      = recon_images_list,
+        nrmse_per_section_list = nrmse_list,
+        recon_labels           = recon_labels,
+        gt_suptitle            = f'${m1_type[zern_mode_index]}$ Ground Truth Planes',
+        fig_suptitle           = f'Effect of Geometry: 4 {m2_type[zern_mode_index]} Planes',
+        roi_beam               = roi_beam,
+    )
+
+
 def main():
+    RECON_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # --- Volume ---
@@ -112,69 +170,33 @@ def main():
             return recon
 
         recons[geo_label] = _load_or_run_recon(
-            OUT_DIR / f'recon_seed{SEED}_{geo_label}_MBIR.npy', run_mbir
+            RECON_CACHE_DIR / f'recon_seed{SEED}_{geo_label}_MBIR.npy', run_mbir
         )
 
-    m1_type = ['OPL', 'OPD', 'OPD_{TT}']
-    m2_type = ['OPL', 'OPD', r'$\text{OPD}_{\text{TT}}$']
+    # --- Panel inputs ---
+    panel_a = _panel_inputs(vol_gt, recons, zern_mode_index=0, plane_name='OPL',    fig_id='12a')
+    panel_b = _panel_inputs(vol_gt, recons, zern_mode_index=2, plane_name='OPD_TT', fig_id='12b')
 
-    # --- Fig 12a (OPL planes) and 12b (OPD_TT planes) ---
-    for fig_id, zern_mode_index, plane_name in [
-        ('12a', 0, 'OPL'),
-        ('12b', 2, 'OPD_TT'),
-    ]:
-        gt_images, roi_beam = prepare_opl_images(
-            vol_gt, zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
-            BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-        )
+    # --- Combined figure: two columns side by side, each the size of a
+    #     stand-alone panel, with (a)/(b) labels underneath. ---
+    sections   = panel_a['gt_images'].shape[0]
+    n_recons   = len(panel_a['recon_images_list'])
+    panel_w    = sections * 4.3
+    panel_h    = (n_recons + 1) * 4.9
+    combined_figsize = (panel_w * 2, panel_h)
 
-        # Order: 11v16 first, then 3v2
-        recon_images_list  = []
-        nrmse_list         = []
-        recon_labels       = [
-            r'11v,$16^\circ$-geometry with WindDensity-MBIR and $OPD_{TT}$ Measurements',
-            r'3v,$2^\circ$-geometry with WindDensity-MBIR and $OPD_{TT}$ Measurements',
-        ]
+    fig = plt.figure(figsize=combined_figsize, constrained_layout=True)
+    column_subfigs = fig.subfigures(nrows=1, ncols=2)
 
-        for geo_label in ['11v16', '3v2']:
-            r_imgs, _ = prepare_opl_images(
-                recons[geo_label], zern_mode_index, SECTIONS, TOTAL_LENGTH_M,
-                BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-            )
-            nrmse = compute_per_section_nrmse(gt_images, r_imgs, roi_beam)
-            recon_images_list.append(r_imgs)
-            nrmse_list.append(nrmse)
+    for col_subfig, panel, label in zip(column_subfigs, (panel_a, panel_b), ('(a)', '(b)')):
+        plot_recon_figure(parent=col_subfig, **panel)
+        col_subfig.text(0.5, -0.04, label, ha='center', va='top', fontsize=40)
 
-        # --- Full-resolution NRMSE printout ---
-        gt_full, roi_full = prepare_opl_images(
-            vol_gt, zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-        )
-        w = 12
-        print(f'\n--- Fig {fig_id} NRMSE Summary ({plane_name} planes) ---')
-        print(f'{"Geometry":<{w}}  Full-res NRMSE  {SECTIONS}-section NRMSE')
-        for geo_label, r_imgs, nrmse_sections_list in zip(['11v16', '3v2'], recon_images_list, nrmse_list):
-            recon_full, _ = prepare_opl_images(
-                recons[geo_label], zern_mode_index, NUM_ROWS, TOTAL_LENGTH_M, BEAM_PIXEL_DIAM, NUM_COLS, NUM_SLICES,
-            )
-            nrmse_full     = compute_overall_nrmse(gt_full,   recon_full, roi_full)
-            nrmse_sections = compute_overall_nrmse(gt_images, r_imgs,     roi_beam)
-            print(f'{geo_label:<{w}}  {nrmse_full:.4f}          {nrmse_sections:.4f}')
-
-        fig = plot_recon_figure(
-            gt_images              = gt_images,
-            recon_images_list      = recon_images_list,
-            nrmse_per_section_list = nrmse_list,
-            recon_labels           = recon_labels,
-            gt_suptitle            = f'${m1_type[zern_mode_index]}$ Ground Truth Planes',
-            fig_suptitle           = f'Effect of Geometry: 4 {m2_type[zern_mode_index]} Planes',
-            roi_beam               = roi_beam,
-        )
-
-        for ext in ('pdf', 'png'):
-            out = OUT_DIR / f'fig{fig_id}_geometry_comparison_{plane_name}.{ext}'
-            fig.savefig(out, bbox_inches='tight', dpi=200)
-            print(f'Saved {out}')
-        plt.show()
+    for ext in ('pdf', 'png'):
+        out = OUT_DIR / f'fig12_geometry_comparison.{ext}'
+        fig.savefig(out, bbox_inches='tight', dpi=200)
+        print(f'Saved {out}')
+    plt.show()
 
 
 if __name__ == '__main__':
