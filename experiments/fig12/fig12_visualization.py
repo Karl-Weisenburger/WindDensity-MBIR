@@ -190,7 +190,7 @@ def main():
 
     for col_subfig, panel, label in zip(column_subfigs, (panel_a, panel_b), ('(a)', '(b)')):
         plot_recon_figure(parent=col_subfig, **panel)
-        col_subfig.text(0.5, -0.04, label, ha='center', va='top', fontsize=40)
+        col_subfig.text(0.5, -0.02, label, ha='center', va='top', fontsize=41)
 
     for ext in ('pdf', 'png'):
         out = OUT_DIR / f'fig12_geometry_comparison.{ext}'

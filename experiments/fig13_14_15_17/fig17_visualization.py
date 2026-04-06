@@ -68,8 +68,8 @@ def _plot_panel(ax, nrmse, resolutions, eval_idx, planetype, panel_label):
             ' *Reconstructing OPL Planes*'
         )
     ax.grid(True)
-    ax.text(0.5, -0.22, panel_label, transform=ax.transAxes,
-            ha='center', va='top', fontsize=24)
+    ax.text(0.5, -0.30, panel_label, transform=ax.transAxes,
+            ha='center', va='top', fontsize=17)
 
 
 def main():
@@ -85,14 +85,13 @@ def main():
     resolutions = data['resolutions']
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
-    fig.subplots_adjust(bottom=0.22)
 
     _plot_panel(axes[0], nrmse, resolutions, eval_idx=0,
                 planetype='OPL', panel_label='(a)')
     _plot_panel(axes[1], nrmse, resolutions, eval_idx=1,
                 planetype=r'$\text{OPD}_{\text{TT}}$', panel_label='(b)')
 
-    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.tight_layout(rect=[0, 0.10, 1, 1])
 
     for ext in ('pdf', 'png'):
         out = OUT_DIR / f'fig17_nrmse_vs_resolution_7v8.{ext}'
