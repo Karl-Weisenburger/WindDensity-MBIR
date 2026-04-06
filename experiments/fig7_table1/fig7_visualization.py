@@ -81,8 +81,8 @@ def _plot_panel(ax, nrmse, full_extents_deg, num_views_list, res_idx, title, pan
     ax.set_title(title, fontsize=18)
     ax.grid(True)
     ax.set_axisbelow(True)
-    ax.text(0.5, -0.08, panel_label, transform=ax.transAxes,
-            ha='center', va='top', fontsize=24)
+    ax.text(0.5, -0.10, panel_label, transform=ax.transAxes,
+            ha='center', va='top', fontsize=30)
 
 
 def main():

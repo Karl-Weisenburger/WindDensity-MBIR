@@ -41,8 +41,8 @@ SCHEMATIC_KWARGS = dict(
 
 # ---- Label sizing (consistent with fig 7 reference: figwidth=20, fontsize=24)
 COMBINED_FIG_W = 20
-LABEL_FONTSIZE = 24
-LABEL_Y        = -0.08
+LABEL_FONTSIZE = 30
+LABEL_Y        = -0.03
 RENDER_DPI     = 300
 
 
