@@ -68,7 +68,7 @@ def _plot_panel(ax, nrmse, resolutions, eval_idx, planetype, panel_label):
             ' *Reconstructing OPL Planes*'
         )
     ax.grid(True)
-    ax.text(0.5, -0.12, panel_label, transform=ax.transAxes,
+    ax.text(0.5, -0.15, panel_label, transform=ax.transAxes,
             ha='center', va='top', fontsize=21)
 
 
@@ -84,7 +84,7 @@ def main():
     nrmse       = data['nrmse']           # (vols, meas, eval, res)
     resolutions = data['resolutions']
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 8))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
     _plot_panel(axes[0], nrmse, resolutions, eval_idx=0,
                 planetype='OPL', panel_label='(a)')
