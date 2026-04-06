@@ -64,9 +64,10 @@ for label, half_ext, n_views in GEOMETRIES:
     ct_model.max_over_relaxation = MAX_OVER_RELAXATION
     geo_models[label] = (ct_model, weights)
 
-# Full-volume beam ROI
-roi_full = np.array(va.generate_beam_path_roi_mask(recon_shape, beam_pixel_diam, location=(0, 0, 0), angle=0))
-roi_full_jnp = jnp.array(roi_full)
+# Beam ROI for N_SECTIONS OPL planes (each plane is 2-D: cols × slices)
+roi_planes = jnp.array(va.generate_beam_path_roi_mask(
+    (N_SECTIONS, num_cols, num_slices), beam_pixel_diam,
+))
 
 # Row section boundaries (excluding padded rows)
 valid_row_start = ROW_PAD
@@ -105,18 +106,16 @@ for vol_idx in trange(N_VOLS, desc='Volumes'):
             max_iterations=MAX_ITERATIONS, stop_threshold_change_pct=STOP_THRESHOLD_PCT,
         )
 
-        gt_cmp    = vol_gt_np
-        recon_cmp = np.array(recon)
+        recon_np = np.array(recon)
 
-        # Per-section NRMSE along the row axis — OPL evaluation, no TTP removal
-        for sec_idx, (r_start, r_end) in enumerate(section_bounds):
-            gt_sec    = gt_cmp[r_start:r_end]
-            recon_sec = recon_cmp[r_start:r_end]
-            roi_sec   = roi_full[r_start:r_end]
+        # Trim padded rows, integrate into OPL planes, then compute per-plane NRMSE
+        gt_planes    = va.divide_into_sections_of_opl(vol_gt[ROW_PAD:-ROW_PAD],  N_SECTIONS, 0.2)
+        recon_planes = va.divide_into_sections_of_opl(recon[ROW_PAD:-ROW_PAD],   N_SECTIONS, 0.2)
 
+        for sec_idx in range(N_SECTIONS):
             nrmse_regional[vol_idx, geo_idx, sec_idx] = float(
                 va.nrmse_over_roi(
-                    jnp.array(gt_sec), jnp.array(recon_sec), jnp.array(roi_sec), option=2
+                    gt_planes[sec_idx], recon_planes[sec_idx], roi_planes[sec_idx], option=2
                 )
             )
 
