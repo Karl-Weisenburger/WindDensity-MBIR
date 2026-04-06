@@ -50,7 +50,7 @@ Installing
                 conda activate winddensity_mbir
 
 
-        2. *Install wind_tomo package:*
+        2. *Install winddensity_mbir package:*
 
             Navigate to the main directory ``winddensity_mbir/`` and run the following:
 

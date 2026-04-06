@@ -18,7 +18,7 @@ cd "$EXPERIMENTS_DIR"
 # Activate conda environment (best-effort — skip if conda not available)
 if command -v conda >/dev/null 2>&1; then
     source "$(conda info --base)/etc/profile.d/conda.sh"
-    conda activate wind_tomo || true
+    conda activate winddensity_mbir || true
 fi
 
 # Force non-interactive matplotlib so plt.show() doesn't block.

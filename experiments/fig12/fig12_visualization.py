@@ -47,9 +47,9 @@ DELTA           = 0.01 * CM_PER_PIXEL
 CN2             = 1e-11
 L0              = 0.02
 SECTIONS        = 4
-MAX_OVER_RELAXATION       = 1.5
-MAX_ITERATIONS            = 15
-STOP_THRESHOLD_CHANGE_PCT = 0.2
+MAX_OVER_RELAXATION       = 1.25
+MAX_ITERATIONS            = 20
+STOP_THRESHOLD_CHANGE_PCT = 1
 
 # Two geometries: (label, half_extent_deg, n_views)
 GEOMETRIES = [
