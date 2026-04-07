@@ -107,7 +107,7 @@ split into two stages:
 .. warning::
 
     Data collection is **GPU-only**. End-to-end it takes roughly
-    **1–3 days on a modern CUDA GPU** (e.g. A100, 3090). Running on CPU
+    **1–3 days on a modern CUDA GPU** (e.g. H100, A100). Running on CPU
     is not supported — it would take weeks to months and was never
     validated. Each data collection script checks for a visible CUDA
     device at startup and aborts if none is found. To override at your

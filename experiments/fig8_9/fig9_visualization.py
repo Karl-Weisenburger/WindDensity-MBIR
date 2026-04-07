@@ -32,7 +32,6 @@ def main():
     data           = np.load(DATA_FILE, allow_pickle=True)
     nrmse_regional = data['nrmse_regional']   # (N_VOLS, n_geos, N_SECTIONS)
     n_vols, n_geos, n_sections = nrmse_regional.shape
-
     avg_vals = np.mean(nrmse_regional, axis=0)                                          # (n_geos, N_SECTIONS)
     SD_3v2   = 2 * np.std(nrmse_regional[:, 0, :], axis=0, ddof=1) / np.sqrt(n_vols)  # (N_SECTIONS,)
     SD_3v16  = 2 * np.std(nrmse_regional[:, 1, :], axis=0, ddof=1) / np.sqrt(n_vols)  # (N_SECTIONS,)
@@ -49,7 +48,7 @@ def main():
 
     plt.legend(['3 views 2 degrees', '3 views 16 degrees'])
     plt.xticks(region_ind)
-    plt.xlabel('Region in Wind Tunnel')
+    plt.xlabel('Region in Wind Tunnel Along Depth Axis')
     plt.ylabel('NRMSE')
     plt.title('Average NRMSE of OPL Planes Relative to Location Along the Depth Axis')
     plt.grid(True)
