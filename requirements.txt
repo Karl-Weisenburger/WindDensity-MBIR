@@ -1,8 +1,0 @@
-numpy
-matplotlib
-scipy
-jaxlib
-jax
-mbirjax
-zernike
-setuptools

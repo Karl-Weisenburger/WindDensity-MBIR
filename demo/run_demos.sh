@@ -14,13 +14,6 @@ else
     source clean_install_all.sh
 fi
 
-## Downloads data for the depot
-#echo " "
-#echo "Downloading data from the depot"
-#echo " "
-#cd ../demo
-#source get_demo_data_server.sh
-
 # Runs demo files
 cd ..
 echo " "
@@ -29,7 +22,7 @@ echo " "
 python demo/demo_simulation_and_tomography.py
 
 echo " "
-echo "Running demo file: demo_simulation_and_tomography.py"
+echo "Running demo file: demo_processing_experimental_data.py"
 echo " "
 python demo/demo_processing_experimental_data.py
 
