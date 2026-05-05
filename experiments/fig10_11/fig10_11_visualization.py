@@ -165,12 +165,13 @@ def plot_fig10(zern_mse, gt_mean_sq):
     g.set_axis_labels('Zernike Radial Degree', Y_NAME)
     g.legend.set_title('Geometry Used')
     g.fig.set_figwidth(18)
-    sns.move_legend(g, bbox_to_anchor=(0.65, 0.82), loc='upper right')
+    sns.move_legend(g, bbox_to_anchor=(0.60, 0.82), loc='upper right')
     plt.title(
         f'{Y_TITLE} projected onto Zernike radial degree subspaces \n'
         f' *Computed for 4 OPL planes along depth axis*'
     )
     g.tight_layout()
+    g.ax.set_yscale('log')
 
     for ext in ('pdf', 'png'):
         out = OUT_DIR / f'fig10_zernike_radial.{ext}'
@@ -213,7 +214,7 @@ def plot_fig11(zern_mse, gt_mean_sq):
     )
     g.despine(left=True)
     g.legend.set_title('Geometry Used')
-    sns.move_legend(g, bbox_to_anchor=(0.85, 0.82), loc='upper right')
+    sns.move_legend(g, bbox_to_anchor=(0.75, 0.82), loc='upper right') #(0.85, 0.82)
     g.ax.set_title(
         f'{Y_TITLE} projected onto Zernike modes \n'
         f' *Computed for 4 OPL planes along depth axis*'
@@ -262,6 +263,7 @@ def plot_fig11(zern_mse, gt_mean_sq):
         labelpad=30, fontsize=12,
     )
     g.fig.subplots_adjust(top=0.85, bottom=0.28)
+    g.ax.set_yscale('log')
 
     for ext in ('pdf', 'png'):
         out = OUT_DIR / f'fig11_zernike_osa_modes.{ext}'
