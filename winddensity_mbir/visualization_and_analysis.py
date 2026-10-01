@@ -94,6 +94,7 @@ def divide_into_sections_of_opl(recon, sections, total_length):
     N = recon.shape[0]
     if sections == N:
         return recon
+    recon = jnp.asarray(recon)  # mbirjax >= 0.7 returns numpy arrays, which cannot be indexed by JAX tracers below
     S = sections
     L = N * 1.0 / S
     H, W = recon.shape[1:]
