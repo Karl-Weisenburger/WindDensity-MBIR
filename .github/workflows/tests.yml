@@ -1,0 +1,39 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      JAX_PLATFORMS: cpu
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # Install exactly as the README tells a new user to (CPU build of JAX).
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[test]"
+
+      - name: Show installed versions
+        run: pip list | grep -iE "^(jax|jaxlib|mbirjax|numpy|scipy) "
+
+      # Run from outside the repo so the tests import the installed package,
+      # not the source tree (catches packaging mistakes).
+      - name: Run tests
+        run: |
+          cp -r tests "$RUNNER_TEMP/tests"
+          cd "$RUNNER_TEMP"
+          python -m pytest tests -m "not slow" -v
