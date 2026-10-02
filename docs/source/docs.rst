@@ -23,7 +23,10 @@ Open index.html to review the documentation.
 Build HTML in readthedocs
 -------------------------
 
-1. Register in readthedocs.
-2. Import your project from GitHub.
-3. Click in your project, click Admin section below your project's name.
-4. Click advanced setting, in Default settings. Put docs/requirements.txt to Requirements file. Enable "Install Project".
+The build is configured by ``.readthedocs.yaml`` in the repository root, which
+installs the package with its ``docs`` extra and builds ``docs/source``.
+
+1. Sign in to https://readthedocs.org with your GitHub account.
+2. Click "Add project" and import the ``WindDensity-MBIR`` repository.
+3. Read the Docs builds the docs on every push to GitHub and publishes them at
+   ``https://<project-slug>.readthedocs.io``.

@@ -29,4 +29,5 @@ Indices and tables
    :maxdepth: 4
    :caption: Developer Guide
 
+   testing
    docs
