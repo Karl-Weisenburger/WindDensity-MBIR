@@ -41,6 +41,7 @@ include = ["winddensity_mbir*"]
 
 [project.urls]
 source = "https://github.com/Karl-Weisenburger/WindDensity-MBIR"
+documentation = "https://winddensity-mbir.readthedocs.io"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -3,9 +3,28 @@
 WindDensity-MBIR
 ===============================
 
+|tests| |docs|
+
+.. |tests| image:: https://github.com/Karl-Weisenburger/WindDensity-MBIR/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/Karl-Weisenburger/WindDensity-MBIR/actions/workflows/tests.yml
+   :alt: Tests
+
+.. |docs| image:: https://readthedocs.org/projects/winddensity-mbir/badge/?version=latest
+   :target: https://winddensity-mbir.readthedocs.io/en/latest/
+   :alt: Documentation
+
 A Python package for simulating wind tunnel density tomography experiments, processing raw tomography data, and performing tomographic reconstruction using MBIRJAX_.
 
 Approved for public release; distribution is unlimited. Public Affairs release approval # 2025-5579
+
+Documentation: https://winddensity-mbir.readthedocs.io
+
+.. note::
+
+    **Project status:** this repository accompanies the WindDensity-MBIR paper and is
+    provided to reproduce its published results. It is not actively maintained, and the
+    dependency versions are pinned to those used for the paper. Development of this work
+    continues in other repositories that are not yet publicly available.
 
 ..
     Include more detailed description here.
