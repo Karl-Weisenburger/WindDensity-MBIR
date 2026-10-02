@@ -10,9 +10,12 @@ set -e  # exit on first error
 EXPERIMENTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$EXPERIMENTS_DIR"
 
-# Activate conda environment
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate wind_tomo
+# Activate the winddensity_mbir conda environment unless a non-base environment
+# is already active (so a custom environment can be used by activating it first).
+if command -v conda >/dev/null 2>&1 && [[ -z "$CONDA_DEFAULT_ENV" || "$CONDA_DEFAULT_ENV" == "base" ]]; then
+    source "$(conda info --base)/etc/profile.d/conda.sh"
+    conda activate winddensity_mbir
+fi
 
 LOG_DIR="$EXPERIMENTS_DIR/logs"
 mkdir -p "$LOG_DIR"

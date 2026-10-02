@@ -16,7 +16,8 @@ Installing
 
     .. code-block::
 
-        git clone git@github.com:Karl-Weisenburger/WindDensity-MBIR
+        git clone https://github.com/Karl-Weisenburger/WindDensity-MBIR.git
+        cd WindDensity-MBIR
 
 2. Install the conda environment and package
 
@@ -41,7 +42,6 @@ Installing
 
                 conda create --name winddensity_mbir python=3.11
                 conda activate winddensity_mbir
-                pip install -r requirements.txt
 
             Anytime you want to use this package, this ``winddensity_mbir`` environment should be activated with the following:
 
@@ -52,7 +52,8 @@ Installing
 
         2. *Install winddensity_mbir package:*
 
-            Navigate to the main directory ``winddensity_mbir/`` and run the following:
+            Navigate to the repository root ``WindDensity-MBIR/`` and run the following
+            (this also installs the pinned dependency versions used for the paper):
 
             .. code-block::
 
@@ -63,6 +64,33 @@ Installing
             .. code-block::
 
                 pip install -e .
+
+            On a machine with a CUDA 12 GPU, install the GPU build of JAX instead with
+
+            .. code-block::
+
+                pip install -e ".[cuda12]"
+
+3. *Verify the installation:*
+
+    .. code-block::
+
+        pip install -e ".[test]"
+        python -m pytest
+        python -c "import jax; print(jax.devices())"
+
+    All tests should pass (they run on CPU in a couple of minutes). The last
+    command should list a ``CudaDevice`` if JAX can see your GPU; if it only
+    lists ``CpuDevice``, the data collection scripts will refuse to run.
+
+    .. note::
+
+        **Clusters with environment modules (e.g. Purdue RCAC):** do not load a
+        ``cuda`` module when using this package. The CUDA libraries installed by
+        pip are used instead, and a loaded CUDA module can shadow them so that
+        JAX silently falls back to the CPU. On Gautschi, ``module load modtree/gpu``
+        loads one automatically, so run ``module unload cuda`` afterwards (also in
+        your batch scripts).
 
 
 Running Demo(s)
@@ -103,6 +131,12 @@ split into two stages:
    ``data/`` subfolder.
 2. **Visualization** — reads the cached ``.npz`` files and writes the
    figures to each experiment's ``figures/`` subfolder.
+
+The ``.npz`` results produced for the paper are included in the repository,
+so you can skip Step 1 and go straight to Step 2 to regenerate the figures.
+Figs 6, 12 and 16 also need full reconstructions of one volume; their scripts
+regenerate and cache these automatically on first run (a few minutes on a GPU).
+Re-running Step 1 overwrites the included results.
 
 .. warning::
 
@@ -153,7 +187,7 @@ left off.
 Step 2 — generate figures
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once data collection has completed, regenerate every paper figure with:
+Using the included results, or once data collection has completed, regenerate every paper figure with:
 
     .. code-block::
 

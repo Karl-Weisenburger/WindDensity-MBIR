@@ -2,8 +2,7 @@
 # This script installs everything from scratch
 
 #####
-# Update the cluster host names, modules, and jax installation as needed, here and in
-# get_demo_data_server.sh
+# Update the cluster host names, modules, and jax installation as needed
 #####
 NAME="winddensity_mbir"
 GILBRETH="gilbreth"
@@ -53,7 +52,9 @@ elif [[ "$HOSTNAME" == *"$GAUTSCHI"* ]]; then
   echo "Installing on Gautschi"
   module load modtree/gpu
   module load conda
-  module load cuda/12.9.0
+  # modtree/gpu loads a system CUDA module whose libraries shadow the CUDA
+  # libraries that pip installs for JAX, making JAX fall back to CPU.
+  module unload cuda
   yes | conda create -n $NAME python="$PYTHON_VERSION"
   conda activate $NAME
   pip install -e "..[cuda12]"
@@ -77,7 +78,7 @@ else
   pip install -e ..
 fi
 
-#pip install "..[tests]"
+pip install -e "..[test]"
 pip install "..[docs]"
 source build_docs.sh
 

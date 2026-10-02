@@ -50,6 +50,19 @@ def _detect_gpu():
     return gpus
 
 
+def _nvidia_gpu_present():
+    """Return True if nvidia-smi reports at least one GPU."""
+    import shutil
+    import subprocess
+    if shutil.which('nvidia-smi') is None:
+        return False
+    try:
+        out = subprocess.run(['nvidia-smi', '-L'], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out.returncode == 0 and 'GPU' in out.stdout
+
+
 def warn_and_confirm(script_label: str, pause_sec: int = 10) -> None:
     """
     Print the runtime warning banner and verify a GPU is available.
@@ -91,6 +104,12 @@ def warn_and_confirm(script_label: str, pause_sec: int = 10) -> None:
     print('  Running on CPU is not supported — it would take weeks to')
     print('  months to finish and was never tested for this project.')
     print('')
+    if _nvidia_gpu_present():
+        print('  An NVIDIA GPU IS present, so JAX failed to load its CUDA')
+        print('  libraries. On clusters this is usually a system CUDA module')
+        print('  (e.g. loaded by `module load modtree/gpu`) shadowing the CUDA')
+        print('  libraries installed by pip. Run `module unload cuda` and retry.')
+        print('')
     print('  If you really want to proceed anyway, re-run with the env')
     print('  variable  WINDDENSITY_ALLOW_CPU=1  set. Otherwise, configure')
     print('  JAX to see your GPU (install jax[cuda12] and ensure the CUDA')
